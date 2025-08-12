@@ -213,8 +213,8 @@ function waitMeteorClientModified() {
   echo "${context}"
   while ! awk -v context="${context}" '
     /'"${context}"'/ {found=1; next}   # When context is found, set `found` and skip
-    found && (/Client modified/ || /\[RSPack Client\] \[client-rspack\]:/) {exit 0}  # After context, check for "Client modified" or "[RSPack Client] [client-rspack]:"
-    END { if (found && !/Client modified/ && !/\[RSPack Client\] \[client-rspack\]:/) exit 1 }  # If found but neither string is present, exit 1
+    found && (/Client modified/ || /\[Rspack Client\] \[client-rspack\]:/) {exit 0}  # After context, check for "Client modified" or "[Rspack Client] [client-rspack]:"
+    END { if (found && !/Client modified/ && !/\[Rspack Client\] \[client-rspack\]:/) exit 1 }  # If found but neither string is present, exit 1
   ' "${logFile}"; do
     sleep 1
     waitSecs=$((waitSecs + 1))
