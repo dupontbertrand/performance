@@ -18,7 +18,7 @@ appPort="$(echo "$meteorOptions" | sed -n 's/.*--port[ =]\?\([0-9]\+\).*/\1/p')"
 if [[ -z "$appPort" ]]; then
   appPort=3000
 fi
-modernDevPort="${MODERN_DEV_PORT:-3005}"
+modernDevPort="${MODERN_DEV_PORT:-8080}"
 appResolved="$(echo $app)"
 logDir="${baseDir}/logs"
 if [[ -d "$appResolved" ]]; then
