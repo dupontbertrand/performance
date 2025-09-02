@@ -404,7 +404,7 @@ function getMetricsStage() {
       if [[ "${stage}" == *"server"* ]]; then
         findMetricStage "${stage}#1" "\(ProjectContext prepareProjectForBuild\)" "Meteor(prepareProjectForBuild #1)"
       fi
-      findMetricStage "${stage}#1" "\(RSPack Rebuild App\)" "RSPack(Rebuild App #1)"
+      findMetricStage "${stage}#1" "\(Rspack Rebuild App\)" "Rspack(Rebuild App #1)"
       if [[ "${stage}" == *"server"* ]]; then
         findMetricStage "${stage}#1" "\(Rebuild App\)" "Meteor(Rebuild App #1)"
         findMetricStage "${stage}#1" "\(Server startup\)" "Meteor(Server startup #1)"
@@ -413,7 +413,7 @@ function getMetricsStage() {
       if [[ "${stage}" == *"server"* ]]; then
         findMetricStage "${stage}#2" "\(ProjectContext prepareProjectForBuild\)" "Meteor(prepareProjectForBuild #2)"
       fi
-      findMetricStage "${stage}#2" "\(RSPack Rebuild App\)" "RSPack(Rebuild App #2)"
+      findMetricStage "${stage}#2" "\(Rspack Rebuild App\)" "Rspack(Rebuild App #2)"
       if [[ "${stage}" == *"server"* ]]; then
         findMetricStage "${stage}#2" "\(Rebuild App\)" "Meteor(Rebuild App #2)"
         findMetricStage "${stage}#2" "\(Server startup\)" "Meteor(Server startup #2)"
