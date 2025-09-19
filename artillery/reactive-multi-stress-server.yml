@@ -1,0 +1,15 @@
+config:
+  target: ws://localhost:3000/websocket
+  phases:
+  - duration: 60
+    arrivalRate: 10
+  ensure:
+    maxErrorRate: 1
+    max: 500
+  processor: '../tests/server-load-helpers.js'
+scenarios:
+  - name: Reactive Multi Pub/Sub DDP
+    flow:
+      - function: 'beforeScenario'
+      - function: 'reactiveMultiPubSubTasksDdp'
+      - function: 'afterScenario'
