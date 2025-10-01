@@ -2,7 +2,9 @@
   "name": "performance",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "stress:ddp": "NODE_OPTIONS=\"--no-deprecation\" artillery run artillery/reactive-multi-stress-server.yml"
+  },
   "author": "",
   "license": "ISC",
   "description": "",
