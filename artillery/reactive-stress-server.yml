@@ -1,0 +1,15 @@
+config:
+  target: ws://localhost:3000/websocket
+  phases:
+  - duration: 60
+    arrivalRate: 5
+  ensure:
+    maxErrorRate: 1
+    max: 500
+  processor: '../tests/server-load-helpers.js'
+scenarios:
+  - name: Measure Task Latency (3.x)
+    flow:
+      - function: 'beforeScenario'
+      - function: 'reactivePubSubTasksDdp'
+      - function: 'afterScenario'

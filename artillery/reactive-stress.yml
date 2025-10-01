@@ -1,8 +1,8 @@
 config:
   target: http://localhost:3000
   phases:
-    - duration: 60
-      arrivalRate: 4
+    - duration: 30
+      arrivalRate: 2
       name: Warm up
   ensure:
     maxErrorRate: 1
@@ -10,6 +10,7 @@ config:
   # Load the Playwright engine:
   engines:
     playwright:
+      headless: true
       globalTimeout: 240000
       launchOptions:
         slowMo: 500
@@ -17,4 +18,4 @@ config:
   processor: '../tests/test-helpers.js'
 scenarios:
   - engine: playwright
-    testFunction: 'reactiveAddAndRemoveTasks'
+    testFunction: 'reactiveAddAndRemoveTasksWithCleanup'

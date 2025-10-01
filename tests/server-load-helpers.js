@@ -353,11 +353,11 @@ async function afterScenario(context) {
   }
 }
 
-async function reactiveMultiPubSubTasksDdp(context) {
+async function reactivePubSubTasksDdp(context) {
   const { ddpClient } = context.vars;
   const subsPerClient = Math.max(1, parseInt(process.env.SUBSCRIPTIONS_PER_CLIENT || '5', 10));
   const reactiveRounds = Math.max(1, parseInt(process.env.o || '1', 10));
-  const includeNonReactive = (process.env.INCLUDE_NON_REACTIVE || 'true').toLowerCase() !== 'false';
+  const includeNonReactive = (process.env.INCLUDE_NON_REACTIVE || 'false').toLowerCase() !== 'false';
   const nonReactiveRounds = Math.max(1, parseInt(process.env.NON_REACTIVE_ROUNDS || '1', 10));
   const managedSubscriptions = [];
 
@@ -398,7 +398,7 @@ async function reactiveMultiPubSubTasksDdp(context) {
 module.exports = {
   beforeScenario,
   afterScenario,
-  reactiveMultiPubSubTasksDdp,
+  reactivePubSubTasksDdp,
   addAndRemoveTasks,
   DdpClient,
 };

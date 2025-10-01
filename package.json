@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "stress:ddp": "NODE_OPTIONS=\"--no-deprecation\" artillery run artillery/reactive-multi-stress-server.yml"
+    "stress:ddp": "NODE_OPTIONS=\"--no-deprecation\" artillery run artillery/reactive-stress-server.yml"
   },
   "author": "",
   "license": "ISC",
@@ -18,7 +18,8 @@
     "artillery": "^2.0.17",
     "m": "^1.9.0",
     "minimist": "^1.2.8",
-    "pidusage": "^3.0.2"
+    "pidusage": "^3.0.2",
+    "mongodb": "^6.8.0"
   },
   "volta": {
     "node": "20.16.0"
