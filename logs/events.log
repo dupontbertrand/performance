@@ -1,0 +1,325 @@
+===============================
+ Artillery Configuration - Thu Oct  2 16:00:09 -03 2025 
+===============================
+config:
+  target: ws://localhost:3000/websocket
+  phases:
+  - duration: 60
+    arrivalRate: 15
+  ensure:
+    maxErrorRate: 1
+    max: 500
+  processor: '../tests/server-load-helpers.js'
+scenarios:
+  - name: Measure Task Latency (3.x)
+    flow:
+      - function: 'beforeScenario'
+      - function: 'reactivePubSubTasksDdp'
+      - function: 'afterScenario'
+===============================
+===============================
+ Environment Variables - Thu Oct  2 16:00:09 -03 2025 
+===============================
+MONGO_URL = mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0
+MONGO_OPLOG_URL = mongodb://localhost:27017,localhost:27018,localhost:27019/local?replicaSet=rs0
+MONTI_APP_ID = Z6A9yDhJQeaCYbjrg
+MONTI_APP_SECRET = b2427f56-45b6-40ae-9eba-c9c2fa079dd0
+ENABLE_APM = 1
+METEOR_CHECKOUT_PATH = /Users/italojose/dev/meteor-dev/meteor
+SKIP_KILL_CONTAINERS = 
+GALAXY_API_KEY = 
+GALAXY_TOKEN = 
+===============================
+Dropping 'test' database before running benchmarks...
+'test' database dropped successfully.
+
+Changes to your project's package version selections:
+
+apm-agent                       added, version 0.0.1
+montiapm:agent+                 added, version 3.0.0-beta.16
+montiapm:agent-binary-deps      added, version 3.0.0
+montiapm:meteorx                added, version 2.3.1
+montiapm:profiler+              added, version 1.7.0-beta.3
+zodern:meteor-package-versions  added, version 0.2.2
+zodern:types                    added, version 1.0.13
+
+
++ In order to resolve constraints, we had to use experimental versions of
+these
+packages.
+
+apm-agent
+===============================
+ Meteor checkout version - 3c7c7c6c3a2ee19c00047beeedf494898b6d6939
+===============================
+=> Running Meteor from a checkout -- overrides project version (Meteor 3.0.2)
+[[[[[ ~/dev/meteor-dev/performance/apps/tasks-3.x ]]]]]
+
+=> Started proxy.
+=> Started HMR server.
+
+Changes to your project's package version selections:
+
+allow-deny                 upgraded from 2.0.0 to 2.1.0
+autoupdate                 upgraded from 2.0.0 to 2.0.1
+babel-compiler             upgraded from 7.11.0 to 7.12.2
+blaze-tools                removed from your project
+boilerplate-generator      upgraded from 2.0.0 to 2.0.2
+caching-compiler           upgraded from 2.0.0 to 2.0.1
+caching-html-compiler      removed from your project
+callback-hook              upgraded from 1.6.0 to 1.6.1
+check                      upgraded from 1.4.2 to 1.4.4
+ddp-client                 upgraded from 3.0.1 to 3.1.1
+ddp-server                 upgraded from 3.0.1 to 3.1.2
+ecmascript                 upgraded from 0.16.9 to 0.16.13
+ecmascript-runtime         upgraded from 0.8.2 to 0.8.3
+ecmascript-runtime-client  upgraded from 0.12.2 to 0.12.3
+ejson                      upgraded from 1.1.4 to 1.1.5
+fetch                      upgraded from 0.1.5 to 0.1.6
+html-tools                 removed from your project
+htmljs                     removed from your project
+logging                    upgraded from 1.3.5 to 1.3.6
+meteor                     upgraded from 2.0.1 to 2.1.1
+minifier-css               upgraded from 2.0.0 to 2.0.1
+minifier-js                upgraded from 3.0.0 to 3.0.4
+minimongo                  upgraded from 2.0.1 to 2.0.4
+modern-browsers            upgraded from 0.1.11 to 0.2.3
+modules                    upgraded from 0.20.1 to 0.20.3
+mongo                      upgraded from 2.0.1 to 2.1.4
+mongo-decimal              upgraded from 0.1.4-beta300.7 to 0.2.0
+npm-mongo*                 upgraded from 4.17.4 to 6.16.1
+shell-server               upgraded from 0.6.0 to 0.6.2
+socket-stream-client       upgraded from 0.5.3 to 0.6.1
+spacebars-compiler         removed from your project
+standard-minifier-js       upgraded from 3.0.0 to 3.1.1
+static-html                upgraded from 1.3.3 to 1.4.0
+static-html-tools          added, version 1.0.0
+templating-tools           removed from your project
+typescript                 upgraded from 5.4.3 to 5.6.6
+webapp                     upgraded from 2.0.1 to 2.0.7
+
+
+* These packages have been updated to new versions that are not backwards
+compatible.
+W20251002-16:00:31.893(-3)? (STDERR) Deprecation warnings are hidden but crucial to address for future Meteor updates. 
+W20251002-16:00:31.899(-3)? (STDERR)  Remove the `METEOR_NO_DEPRECATION` env var to reveal them, then report or fix the issues.
+I20251002-16:00:32.007(-3)? ✅ Using EventObserveDriver for {"ordered":false,"collectionName":"__dummy_coll_TRtKvTf2TWxx5scfF","selector":{},"options":{"transform":null}}
+I20251002-16:00:32.010(-3)? ✅ Using PollingObserveDriver for {"ordered":false,"collectionName":"__dummy_coll_TRtKvTf2TWxx5scfF","selector":{},"options":{"transform":null,"limit":20,"_disableOplog":true}}
+I20251002-16:00:32.011(-3)? ✅ Using EventObserveDriver for {"ordered":false,"collectionName":"__dummy_coll_TRtKvTf2TWxx5scfF","selector":{},"options":{"transform":null}}
+=> Started your app.
+
+=> App running at: http://localhost:3000/
+APP PID: 13121
+Replica node localhost:27017 PID: 49803
+Replica node localhost:27018 PID: 49806
+Replica node localhost:27019 PID: 49817
+Replica PIDs: 49803 49806 49817
+Monitor CpuRam APP Pid 13160
+Monitor CpuRam REPLICA_localhost_27017 Pid 13166
+Monitor CpuRam REPLICA_localhost_27018 Pid 13167
+Monitor CpuRam REPLICA_localhost_27019 Pid 13168
+I20251002-16:00:32.336(-3)? Monti APM: Connected
+Test run id: tty6k_qgg488wp8dhnnhph4kn5rjqd7xbmc_k4cq
+APP | Cpu 40 Memory 172277760
+REPLICA_localhost_27017 | Cpu 1.2609652017069202 Memory 375013376
+REPLICA_localhost_27018 | Cpu 1.3062227794641679 Memory 384581632
+REPLICA_localhost_27019 | Cpu 1.4194538235649945 Memory 394477568
+Phase started: unnamed (index: 0, duration: 60s) 16:00:33(-0300)
+
+I20251002-16:00:34.467(-3)? ✅ Using EventObserveDriver for {"ordered":false,"collectionName":"taskCollection","selector":{},"options":{"transform":null}}
+APP | Cpu 56.00000000000001 Memory 324337664
+REPLICA_localhost_27018 | Cpu 25 Memory 386007040
+REPLICA_localhost_27017 | Cpu 25 Memory 376487936
+REPLICA_localhost_27019 | Cpu 45 Memory 399261696
+--------------------------------------
+Metrics for period to: 16:00:40(-0300) (width: 5.499s)
+--------------------------------------
+
+vusers.completed: .............................................................. 69
+vusers.created: ................................................................ 80
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 80
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 665.3
+  max: ......................................................................... 827.9
+  mean: ........................................................................ 748.4
+  median: ...................................................................... 757.6
+  p95: ......................................................................... 804.5
+  p99: ......................................................................... 820.7
+
+
+APP | Cpu 48 Memory 404357120
+REPLICA_localhost_27017 | Cpu 24 Memory 377257984
+REPLICA_localhost_27018 | Cpu 25 Memory 386334720
+REPLICA_localhost_27019 | Cpu 45 Memory 401162240
+--------------------------------------
+Metrics for period to: 16:00:50(-0300) (width: 9.968s)
+--------------------------------------
+
+vusers.completed: .............................................................. 152
+vusers.created: ................................................................ 150
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 150
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 671.7
+  max: ......................................................................... 826.6
+  mean: ........................................................................ 730.2
+  median: ...................................................................... 727.9
+  p95: ......................................................................... 804.5
+  p99: ......................................................................... 820.7
+
+
+APP | Cpu 44 Memory 403701760
+REPLICA_localhost_27017 | Cpu 22 Memory 377913344
+REPLICA_localhost_27018 | Cpu 22 Memory 386662400
+REPLICA_localhost_27019 | Cpu 40 Memory 401784832
+--------------------------------------
+Metrics for period to: 16:01:00(-0300) (width: 9.997s)
+--------------------------------------
+
+vusers.completed: .............................................................. 151
+vusers.created: ................................................................ 150
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 150
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 647.6
+  max: ......................................................................... 821.2
+  mean: ........................................................................ 714.7
+  median: ...................................................................... 713.5
+  p95: ......................................................................... 788.5
+  p99: ......................................................................... 788.5
+
+
+APP | Cpu 44 Memory 403881984
+REPLICA_localhost_27018 | Cpu 24 Memory 387579904
+REPLICA_localhost_27017 | Cpu 24 Memory 379207680
+REPLICA_localhost_27019 | Cpu 42 Memory 402751488
+--------------------------------------
+Metrics for period to: 16:01:10(-0300) (width: 9.993s)
+--------------------------------------
+
+vusers.completed: .............................................................. 150
+vusers.created: ................................................................ 150
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 150
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 618.9
+  max: ......................................................................... 737.7
+  mean: ........................................................................ 666.2
+  median: ...................................................................... 658.6
+  p95: ......................................................................... 713.5
+  p99: ......................................................................... 727.9
+
+
+APP | Cpu 43 Memory 404258816
+REPLICA_localhost_27018 | Cpu 22 Memory 388251648
+REPLICA_localhost_27017 | Cpu 21 Memory 379486208
+REPLICA_localhost_27019 | Cpu 42 Memory 403390464
+--------------------------------------
+Metrics for period to: 16:01:20(-0300) (width: 9.999s)
+--------------------------------------
+
+vusers.completed: .............................................................. 151
+vusers.created: ................................................................ 151
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 151
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 626.6
+  max: ......................................................................... 750.7
+  mean: ........................................................................ 678.3
+  median: ...................................................................... 671.9
+  p95: ......................................................................... 727.9
+  p99: ......................................................................... 742.6
+
+
+APP | Cpu 44 Memory 404373504
+REPLICA_localhost_27018 | Cpu 23 Memory 389283840
+REPLICA_localhost_27017 | Cpu 23 Memory 380862464
+REPLICA_localhost_27019 | Cpu 46 Memory 404275200
+Phase completed: unnamed (index: 0, duration: 60s) 16:01:33(-0300)
+
+--------------------------------------
+Metrics for period to: 16:01:30(-0300) (width: 9.953s)
+--------------------------------------
+
+vusers.completed: .............................................................. 148
+vusers.created: ................................................................ 150
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 150
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 629.9
+  max: ......................................................................... 732.6
+  mean: ........................................................................ 669
+  median: ...................................................................... 658.6
+  p95: ......................................................................... 713.5
+  p99: ......................................................................... 727.9
+
+
+--------------------------------------
+Metrics for period to: 16:01:40(-0300) (width: 5.06s)
+--------------------------------------
+
+vusers.completed: .............................................................. 79
+vusers.created: ................................................................ 69
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 69
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 607.5
+  max: ......................................................................... 713.5
+  mean: ........................................................................ 659.2
+  median: ...................................................................... 658.6
+  p95: ......................................................................... 699.4
+  p99: ......................................................................... 699.4
+
+
+All VUs finished. Total time: 1 minute, 2 seconds
+
+--------------------------------
+Summary report @ 16:01:37(-0300)
+--------------------------------
+
+vusers.completed: .............................................................. 900
+vusers.created: ................................................................ 900
+vusers.created_by_name.Measure Task Latency (3.x): ............................. 900
+vusers.failed: ................................................................. 0
+vusers.session_length:
+  min: ......................................................................... 607.5
+  max: ......................................................................... 827.9
+  mean: ........................................................................ 693.3
+  median: ...................................................................... 685.5
+  p95: ......................................................................... 772.9
+  p99: ......................................................................... 804.5
+
+Changes to your project's package version selections:
+
+apm-agent                       removed from your project
+montiapm:agent                  removed from your project
+montiapm:agent-binary-deps      removed from your project
+montiapm:meteorx                removed from your project
+montiapm:profiler               removed from your project
+zodern:meteor-package-versions  removed from your project
+zodern:types                    removed from your project
+
+apm-agent: removed dependency
+----------
+REPLICA_localhost_27017
+Average CPU usage (%): 20.42
+Average Memory usage (bytes): 378 MB
+----------
+----------
+REPLICA_localhost_27018
+Average CPU usage (%): 20.58
+Average Memory usage (bytes): 387 MB
+----------
+----------
+APP
+Average CPU usage (%): 43.07
+Average Memory usage (bytes): 379 MB
+----------
+----------
+REPLICA_localhost_27019
+Average CPU usage (%): 38.09
+Average Memory usage (bytes): 402 MB
+----------
+[0;32mOutput is suitable for comparisons (logs/oplog-server-tasks-3.x-reactive-stress-server.yml.log)[0m
+[0;32m Replicaset managed the configuration correctly.[0m

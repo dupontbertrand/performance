@@ -2,7 +2,7 @@ config:
   target: ws://localhost:3000/websocket
   phases:
   - duration: 60
-    arrivalRate: 5
+    arrivalRate: 15
   ensure:
     maxErrorRate: 1
     max: 500

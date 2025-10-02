@@ -1,0 +1,12 @@
+{
+    "packages": {
+        "mongo": {
+            "reactivity": {
+                "eventEmitter": false,
+                "changeStreams": false,
+                "oplog": false,
+                "pooling": true
+            }
+        }
+    }
+}
