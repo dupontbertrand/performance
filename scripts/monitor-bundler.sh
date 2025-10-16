@@ -18,7 +18,7 @@ appPort="$(echo "$meteorOptions" | sed -n 's/.*--port[ =]\?\([0-9]\+\).*/\1/p')"
 if [[ -z "$appPort" ]]; then
   appPort=3000
 fi
-modernDevPort="${MODERN_DEV_PORT:-8080}"
+devServerPort="${RSPACK_DEVSERVER_PORT:-8080}"
 appResolved="$(echo $app)"
 logDir="${baseDir}/logs"
 if [[ -d "$appResolved" ]]; then
@@ -679,7 +679,7 @@ if [[ -z "${monitorSizeOnly}" ]] && [[ -z "${monitorBuild}" ]]; then
   end_time_ms=$(getTime)
   ColdStartProcessTime=$((end_time_ms - start_time_ms))
   killProcessByPort "${appPort}"
-  killProcessByPort "${modernDevPort}"
+  killProcessByPort "${devServerPort}"
   sleep 2
 
   logProgress " * Profiling \"Cache start\"..."
@@ -694,7 +694,7 @@ if [[ -z "${monitorSizeOnly}" ]] && [[ -z "${monitorBuild}" ]]; then
   end_time_ms=$(getTime)
   CacheStartProcessTime=$((end_time_ms - start_time_ms))
   killProcessByPort "${appPort}"
-  killProcessByPort "${modernDevPort}"
+  killProcessByPort "${devServerPort}"
   sleep 2
 
   logProgress " * Profiling \"Rebuild client\"..."
@@ -716,7 +716,7 @@ if [[ -z "${monitorSizeOnly}" ]] && [[ -z "${monitorBuild}" ]]; then
   end_time_ms=$(getTime)
   RebuildClientProcessTime=$((end_time_ms - start_time_ms))
   killProcessByPort "${appPort}"
-  killProcessByPort "${modernDevPort}"
+  killProcessByPort "${devServerPort}"
   sleep 2
 
   logProgress " * Profiling \"Rebuild server\"..."
@@ -738,7 +738,7 @@ if [[ -z "${monitorSizeOnly}" ]] && [[ -z "${monitorBuild}" ]]; then
   end_time_ms=$(getTime)
   RebuildServerProcessTime=$((end_time_ms - start_time_ms))
   killProcessByPort "${appPort}"
-  killProcessByPort "${modernDevPort}"
+  killProcessByPort "${devServerPort}"
   sleep 2
 fi
 
