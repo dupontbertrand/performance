@@ -404,4 +404,5 @@ The Collector pipeline is in `infra/otel-collector-config.yml`. Prometheus scrap
 - [ ] Visualize the trace:duration instead span:duration into dashboards
 - [ ] Add more spans (e.g., DB operations)
 - [ ] Add metrics (e.g., method call counts, latencies)
+- [ ] Install original `meteor-opentelemetry` package instead use the source code
 - [ ] Integrate with the main repo
