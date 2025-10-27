@@ -1,0 +1,43 @@
+### OS
+.DS_Store
+
+### Editors/IDE
+.vscode/
+.idea/
+
+### Node / Package managers
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.npm/
+.pnpm-store/
+
+### Meteor
+# Importante: mantenha .meteor/* versionado exceto a pasta local
+.meteor/local/
+.meteor/dev_bundle/
+.meteor/cordova-build/
+
+### Env files
+.env
+.env.*
+!.env.example
+
+### Tests/Coverage
+coverage/
+.nyc_output/
+
+### Build artifacts
+bundle/
+dist/
+*.tar.gz
+
+### Docker data volumes (persistência local)
+data/grafana-data/
+data/prometheus-data/
+data/loki-data/
+data/tempo-data/
+
+### Misc
+*.pid
+*.log

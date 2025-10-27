@@ -1,0 +1,47 @@
+{
+  "name": "perf-metrics",
+  "private": true,
+  "scripts": {
+    "start": "meteor run --port 8080 --settings settings.json",
+    "test": "meteor test --once --driver-package meteortesting:mocha",
+    "test-app": "TEST_WATCH=1 meteor test --full-app --driver-package meteortesting:mocha",
+    "visualize": "meteor --production --extra-packages bundle-visualizer",
+    "load-test": "npx artillery run tests/artillery/add-task.yml & node scripts/mongo-links-ops.mjs & wait"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.23.5",
+    "@opentelemetry/api-logs": "^0.206.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.65.0",
+    "@opentelemetry/exporter-logs-otlp-http": "^0.206.0",
+    "@opentelemetry/exporter-metrics-otlp-http": "^0.206.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
+    "@opentelemetry/host-metrics": "^0.36.2",
+    "@opentelemetry/instrumentation": "^0.206.0",
+    "@opentelemetry/instrumentation-user-interaction": "^0.51.0",
+    "@opentelemetry/otlp-transformer": "^0.206.0",
+    "@opentelemetry/resources": "^2.1.0",
+    "@opentelemetry/sdk-logs": "^0.206.0",
+    "@opentelemetry/sdk-metrics": "^2.1.0",
+    "@opentelemetry/sdk-trace-node": "^2.1.0",
+    "@opentelemetry/sdk-trace-web": "^2.1.0",
+    "@opentelemetry/semantic-conventions": "^1.30.0",
+    "@swc/helpers": "^0.5.17",
+    "isomorphic-ws": "^5.0.0",
+    "meteor-node-stubs": "^1.2.12",
+    "meteor-sdk": "^0.0.21",
+    "mongodb": "^5.9.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "meteor": {
+    "mainModule": {
+      "client": "client/main.jsx",
+      "server": "server/main.js"
+    },
+    "testModule": "tests/main.js",
+    "modern": true
+  },
+  "devDependencies": {
+    "puppeteer": "^24.24.0"
+  }
+}

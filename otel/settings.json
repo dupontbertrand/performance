@@ -1,0 +1,26 @@
+{
+  "packages": {
+    "mongo": {
+        "reactivity": {
+            "eventEmitter": false,
+            "changeStreams": false,
+            "oplog": true,
+            "pooling": false
+        }
+    },
+    "danopia:opentelemetry": {
+      "enabled": true,
+      "otlpEndpoint": "http://localhost:4318",
+      "serverResourceAttributes": {
+        "service.name": "perf-metrics",
+        "deployment.environment": "local"
+      },
+      "clientResourceAttributes": {
+        "service.name": "perf-metrics-browser",
+        "deployment.environment": "local"
+      }
+    }
+  },
+  "MONGO_URL": "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0",
+  "MONGO_OPLOG_URL": "mongodb://localhost:27017,localhost:27018,localhost:27019/local?replicaSet=rs0"
+}

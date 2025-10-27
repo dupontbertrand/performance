@@ -1,0 +1,51 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        # OTLP/HTTP receiver (default OTLP HTTP port)
+        endpoint: 0.0.0.0:4318
+
+exporters:
+  debug:
+    verbosity: detailed
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    send_timestamps: true
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp/v1/logs
+    tls:
+      insecure: true
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+processors:
+  batch:
+  attributes:
+    actions:
+      - action: insert
+        key: env
+        value: "${DEPLOY_ENV}"
+
+extensions:
+  zpages:
+     endpoint: 0.0.0.0:55679
+
+service:
+  extensions: [zpages]  # Enable zpages
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch, attributes]
+      exporters: [prometheus]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki]

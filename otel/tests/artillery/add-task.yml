@@ -1,0 +1,21 @@
+config:
+  target: "ws://localhost:8080/websocket"
+  phases:
+    - duration: 120
+      arrivalRate: 30
+  engines:
+    ws: {}
+  processor: "./processors.js"
+
+scenarios:
+  - name: "add_tasks_subscription_cleanup"
+    engine: ws
+    flow:
+      - function: "initSession"
+      - function: "connectToDdp"
+      - function: "subscribeLinks"
+      - loop:
+          - function: "insertTask"
+          - think: "0.1s"
+        count: 10
+      - function: "clearSession"
