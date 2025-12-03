@@ -10,6 +10,7 @@
     },
     "danopia:opentelemetry": {
       "enabled": true,
+      "hostMetricsEnabled": true,
       "otlpEndpoint": "http://localhost:4318",
       "serverResourceAttributes": {
         "service.name": "perf-metrics",

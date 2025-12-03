@@ -1391,7 +1391,7 @@
           {
             "key": "rootServiceName",
             "operator": "=",
-            "value": "perf-metrics"
+            "value": "perf-metrics-browser"
           }
         ]
       },

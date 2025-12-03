@@ -26,7 +26,7 @@ Meteor.startup(async () => {
       check(sessionId, String);
       
       const { insertionContext } = extractInsertionContext({ carrier });
-      const { span: span, spanContext: methodContext } = startServerInsertSpan(insertionContext);
+      const { span, spanContext: methodContext } = startServerInsertSpan(insertionContext);
 
       let createdAtDate = createdAt;
       if (!(createdAtDate instanceof Date) && createdAtDate && typeof createdAtDate === 'object' && '$date' in createdAtDate) {

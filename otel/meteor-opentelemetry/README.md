@@ -130,6 +130,8 @@ You can also enable this library and supply configuration via Meteor settings:
 }
 ```
 
+Host-level CPU and memory metrics (the `system.*` series from `@opentelemetry/host-metrics`) are enabled by default. Disable them by setting `hostMetricsEnabled` to `false` under `packages.danopia:opentelemetry` in your Meteor settings.
+
 Note that OpenTelemetry defines a number of environment variables such as
 `OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_RESOURCE_ATTRIBUTES`.
 Since `meteor-opentelemetry` submits traces thru DDP,

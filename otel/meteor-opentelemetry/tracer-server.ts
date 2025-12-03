@@ -38,14 +38,18 @@ if (settings.enabled) {
   const meter = metricsProvider.getMeter('meteor-server');
 
   // Start collecting host-level CPU and memory metrics (system.*)
-  try {
-    const hostMetrics = new HostMetrics({
-      meterProvider: metricsProvider,
-      // name: 'host-metrics', // optional
-    });
-    hostMetrics.start();
-  } catch (err) {
-    diag.warn('Failed to start HostMetrics instrumentation', err as any);
+  if (settings.hostMetricsEnabled !== false) {
+    try {
+      const hostMetrics = new HostMetrics({
+        meterProvider: metricsProvider,
+        // name: 'host-metrics', // optional
+      });
+      hostMetrics.start();
+    } catch (err) {
+      diag.warn('Failed to start HostMetrics instrumentation', err as any);
+    }
+  } else {
+    diag.debug('HostMetrics instrumentation disabled via settings');
   }
 
   const processMemoryGauge = meter.createObservableGauge('meteorjs_memory_usage', {
