@@ -1,4 +1,5 @@
-import './otel.js';
+import './otel.js'; // TODO: os dados da v8 só sao enviados pro prometheus quando fazemos assim
+import { beginLinksRoundtrip } from './otel.js';
 import { Meteor } from 'meteor/meteor';
 import { LinksCollection } from '/imports/api/links';
 import { Random } from 'meteor/random';
@@ -19,12 +20,16 @@ Meteor.startup(async () => {
       const { sessionId, createdAt } = traceContext;
       check(sessionId, String);
 
+      const roundtrip = beginLinksRoundtrip(sessionId);
+
       let createdAtDate = createdAt;
       if (!(createdAtDate instanceof Date) && createdAtDate && typeof createdAtDate === 'object' && '$date' in createdAtDate) {
         createdAtDate = new Date(createdAtDate.$date);
       }
       if (!(createdAtDate instanceof Date) || Number.isNaN(createdAtDate.getTime())) {
-        throw new Meteor.Error('invalid-createdAt', 'createdAt must be a valid Date supplied by the client');
+        const err = new Meteor.Error('invalid-createdAt', 'createdAt must be a valid Date supplied by the client');
+        roundtrip.fail(err);
+        throw err;
       }
 
       const doc = {
@@ -33,8 +38,15 @@ Meteor.startup(async () => {
         sessionId,
       };
 
-      await LinksCollection.insertAsync(doc);
-      return doc._id;
+      roundtrip.setDocId(doc._id);
+
+      try {
+        await LinksCollection.insertAsync(doc);
+        return doc._id;
+      } catch (error) {
+        roundtrip.fail(error);
+        throw error;
+      }
     },
     async "links.clear"() {
       await LinksCollection.removeAsync({});
