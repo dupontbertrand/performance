@@ -10,7 +10,6 @@ import { HostMetrics } from '@opentelemetry/host-metrics';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
-import { Mongo } from 'meteor/mongo';
 /* global MeteorX */
 
 // Enable verbose logging only when OTEL_DEBUG=1 to help troubleshoot connectivity issues.
@@ -68,8 +67,10 @@ tracerProvider.register();
 // Exponha o meter provider globalmente para que instrumentations de runtime usem o mesmo export.
 metrics.setGlobalMeterProvider(meterProvider);
 
-// Métricas de runtime do Node/V8/event loop.
+// Métricas e traces automáticos (runtime + MongoDB driver).
 registerInstrumentations({
+  tracerProvider,
+  meterProvider,
   instrumentations: [
     new RuntimeNodeInstrumentation({
       // Exemplo: medir event loop a cada 5s (padrão 5000 ms).
@@ -86,51 +87,6 @@ const hostMetrics = new HostMetrics({
 });
 
 hostMetrics.start();
-
-// --- MongoDB spans (prototype monkey patch) ----------------------------------
-// TODO: should we maunally instrument the underlying MongoDB driver instead?
-const mongoTracer = trace.getTracer('mongo');
-
-function instrumentMongoCollectionPrototype() {
-  const methods = [
-    ['insertAsync', 'insert'],
-    ['updateAsync', 'update'],
-    ['removeAsync', 'remove'],
-    ['deleteAsync', 'delete'],
-    ['findOneAsync', 'findOne'],
-  ];
-
-  for (const [methodName, opName] of methods) {
-    const original = Mongo.Collection.prototype[methodName];
-    if (typeof original !== 'function' || original.__otelWrapped) continue;
-
-    Mongo.Collection.prototype[methodName] = async function patchedMethod(...args) {
-      return mongoTracer.startActiveSpan(`mongo.${opName}`, {
-        attributes: {
-          'db.system': 'mongodb',
-          'db.operation': opName,
-          'db.mongodb.collection': this._name || 'unknown',
-        },
-      }, async (span) => {
-        try {
-          const result = await original.apply(this, args);
-          span.setStatus({ code: SpanStatusCode.OK });
-          return result;
-        } catch (err) {
-          span.recordException(err);
-          span.setStatus({ code: SpanStatusCode.ERROR, message: err?.message });
-          throw err;
-        } finally {
-          span.end();
-        }
-      });
-    };
-
-    Mongo.Collection.prototype[methodName].__otelWrapped = true;
-  }
-}
-
-instrumentMongoCollectionPrototype();
 
 // --- Roundtrip tracing for Meteor DDP publishes (links collection) -----------
 
