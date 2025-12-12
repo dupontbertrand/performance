@@ -41,7 +41,7 @@ Meteor.startup(async () => {
       roundtrip.setDocId(doc._id);
 
       try {
-        await LinksCollection.insertAsync(doc);
+        await roundtrip.run(() => LinksCollection.insertAsync(doc));
         return doc._id;
       } catch (error) {
         roundtrip.fail(error);
