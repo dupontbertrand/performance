@@ -1,9 +1,7 @@
 import React, { useCallback, useRef } from 'react';
 import { useFind, useSubscribe } from 'meteor/react-meteor-data';
 import { LinksCollection } from '../api/links';
-import { context, SpanStatusCode } from '@opentelemetry/api';
 import { Meteor } from 'meteor/meteor';
-import { startUiInsertSpan } from '../clients/links-otel';
 import { Random } from 'meteor/random';
 
 
@@ -14,37 +12,14 @@ export const Info = () => {
 
   const onSubmit = useCallback(async (e) => {
     e.preventDefault();
-    const { span, context: activeCtx, carrier } = startUiInsertSpan();
     const createdAt = new Date();
-    span.setAttribute('links.session_id', sessionIdRef.current);
-    span.setAttribute('links.created_at_iso', createdAt.toISOString());
-
     try {
-      await context.with(activeCtx, () =>
-        Meteor.callAsync('links.insert', {
-          carrier,
-          sessionId: sessionIdRef.current,
-          createdAt,
-        }),
-      );
-      span.setStatus({ code: SpanStatusCode.OK });
+      await Meteor.callAsync('links.insert', {
+        sessionId: sessionIdRef.current,
+        createdAt,
+      });
     } catch (err) {
-      if (err instanceof Error) {
-        span.recordException(err);
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: err.message,
-        });
-        console.error('links.insert failed', err);
-      } else {
-        span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: 'links.insert failed',
-        });
-        console.error('links.insert failed', err);
-      }
-    } finally {
-      span.end();
+      console.error('links.insert failed', err);
     }
   }, []);
 

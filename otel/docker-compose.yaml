@@ -104,22 +104,22 @@ services:
       - ./data/tempo-data:/tmp/tempo
     restart: unless-stopped
 
-  mongodb-exporter:
-    image: percona/mongodb_exporter:0.39
-    container_name: mongodb-exporter
-    depends_on:
-      - mongo-replica
-    environment:
-      - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0}
-    command:
-      - --mongodb.uri=${MONGODB_URI:-mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0}
-      - --no-mongodb.direct-connect
-      - --collect-all
-    ports:
-      - "9216:9216"  # MongoDB exporter metrics
-    restart: unless-stopped
-    networks:
-      - default
+  # mongodb-exporter:
+  #   image: percona/mongodb_exporter:0.39
+  #   container_name: mongodb-exporter
+  #   depends_on:
+  #     - mongo-replica
+  #   environment:
+  #     - MONGODB_URI=${MONGODB_URI:-mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0}
+  #   command:
+  #     - --mongodb.uri=${MONGODB_URI:-mongodb://host.docker.internal:27017,host.docker.internal:27018,host.docker.internal:27019/?replicaSet=rs0}
+  #     - --no-mongodb.direct-connect
+  #     - --collect-all
+  #   ports:
+  #     - "9216:9216"  # MongoDB exporter metrics
+  #   restart: unless-stopped
+  #   networks:
+  #     - default
 
 volumes:
   mongo_data:
