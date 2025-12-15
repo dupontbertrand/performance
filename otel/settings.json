@@ -1,8 +1,8 @@
 {
   "packages": {
     "mongo": {
-      "reactivity": ["oplog", "pooling"]
-    },
+      "reactivity": ["changeStreams", "polling"]
+    }
   },
   "MONGO_URL": "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0",
   "MONGO_OPLOG_URL": "mongodb://localhost:27017,localhost:27018,localhost:27019/local?replicaSet=rs0"

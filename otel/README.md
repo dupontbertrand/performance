@@ -216,7 +216,7 @@ Prometheus scrape config (`infra/prometheus.yaml`):
 
 Suggested queries:
 
-- Tempo: service.name = `perf-metrics` or `perf-metrics-browser`
+- Tempo: service.name = `meteor-host`
 - Loki: filter by label `{env="dev"}` or your log attributes
 - Prometheus: `links_roundtrip_createdAt_ms_bucket` (from load test) and Mongo exporter metrics
 
