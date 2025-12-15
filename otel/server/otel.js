@@ -1,3 +1,4 @@
+import os from 'node:os';
 import { diag, DiagConsoleLogger, DiagLogLevel, trace, SpanStatusCode, context } from '@opentelemetry/api';
 import { PeriodicExportingMetricReader, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -87,6 +88,52 @@ const hostMetrics = new HostMetrics({
 });
 
 hostMetrics.start();
+
+const meter = meterProvider.getMeter('meteor-custom-metrics');
+const logicalCoreCount = Math.max(os.cpus()?.length || 1, 1);
+
+let lastCpuUsage = process.cpuUsage();
+let lastCpuCheckTime = process.hrtime.bigint();
+
+const cpuGauge = meter.createObservableGauge('meteorjs_cpu_utilization_ratio', {
+  description: 'Fraction (0-1) of total CPU capacity currently consumed by the Meteor Node.js process',
+});
+
+cpuGauge.addCallback((observableResult) => {
+  const nowHrTime = process.hrtime.bigint();
+  const nowUsage = process.cpuUsage();
+
+  const elapsedMicros = Number(nowHrTime - lastCpuCheckTime) / 1000;
+  const cpuMicros = (nowUsage.user - lastCpuUsage.user) + (nowUsage.system - lastCpuUsage.system);
+
+  let utilization = 0;
+  if (elapsedMicros > 0) {
+    utilization = cpuMicros / (elapsedMicros * logicalCoreCount);
+    if (Number.isFinite(utilization)) {
+      utilization = Math.min(Math.max(utilization, 0), 1);
+    } else {
+      utilization = 0;
+    }
+  }
+
+  observableResult.observe(utilization);
+
+  lastCpuUsage = nowUsage;
+  lastCpuCheckTime = nowHrTime;
+});
+
+const memoryGauge = meter.createObservableGauge('meteorjs_memory_usage_bytes', {
+  description: 'Memory footprint of the Meteor Node.js process split by region',
+});
+
+memoryGauge.addCallback((observableResult) => {
+  const memoryUsage = process.memoryUsage();
+  Object.entries(memoryUsage).forEach(([key, value]) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      observableResult.observe(value, { memory_type: key });
+    }
+  });
+});
 
 // --- Roundtrip tracing for Meteor DDP publishes (links collection) -----------
 

@@ -220,6 +220,15 @@ Suggested queries:
 - Loki: filter by label `{env="dev"}` or your log attributes
 - Prometheus: `links_roundtrip_createdAt_ms_bucket` (from load test) and Mongo exporter metrics
 
+### Custom Meteor metrics
+
+Besides the automatic runtime/host metrics, the Meteor server now exports two process-focused gauges via OTEL → Prometheus:
+
+- `meteorjs_cpu_utilization_ratio` (0–1): normalized CPU usage of the Meteor Node.js process across all logical cores.
+- `meteorjs_memory_usage_bytes{memory_type="rss|heapTotal|heapUsed|external|arrayBuffers"}`: live memory footprint broken down by region for richer dashboards.
+
+Both are wired into the provisioned Grafana dashboard under “Meteor CPU Utilization” and “Meteor Memory Usage”.
+
 
 ## MongoDB Exporter Health Checks
 
