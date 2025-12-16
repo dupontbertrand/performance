@@ -128,6 +128,8 @@ const memoryGauge = meter.createObservableGauge('meteorjs_memory_usage_bytes', {
 
 memoryGauge.addCallback((observableResult) => {
   const memoryUsage = process.memoryUsage();
+  // console em GB
+  // console.log(`OTLP: Memory usage: RSS ${(memoryUsage.rss / (1024 ** 3)).toFixed(2)} GB, Heap Used ${(memoryUsage.heapUsed / (1024 ** 3)).toFixed(2)} GB`);
   Object.entries(memoryUsage).forEach(([key, value]) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
       observableResult.observe(value, { memory_type: key });
