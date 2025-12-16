@@ -10,24 +10,7 @@ Meteor.startup(async () => {
   console.log('Server started');
   console.log(`MongoDB URL: ${process.env.MONGO_URL}`);
   console.log(`MongoDB Oplog URL: ${process.env.MONGO_OPLOG_URL}`);
-
-
-  // // implement a leak of memory of 100MB each second for testing purposes
-  let leak = [];
-  setInterval(() => {
-    // for(let i = 0; i < 10; i++) {
-      leak.push(new Array(5 * 1024 * 1024).fill(0));
-    // } 
-
-    const bytesToGB = b => b / (1024 ** 3);
-
-    
-    // apresente o total de memoria usada pelo processo
-    const memoryUsage = process.memoryUsage();
-    console.log(`Memory usage: RSS ${bytesToGB(memoryUsage.rss).toFixed(2)} GB, Heap Used ${bytesToGB(memoryUsage.heapUsed).toFixed(2)} GB`);
-  }, 1000);
   
-
   Meteor.publish("links", function () {
     return LinksCollection.find({ scriptRunId: { $exists: false } });
   });
@@ -74,3 +57,28 @@ Meteor.startup(async () => {
     }
   });
 });
+
+
+const summary = {
+  addded: 0,
+  changed: 0,
+  removed: 0,
+}
+//crate an observable
+export const LinksObservable = LinksCollection.find().observeChanges({
+  added(id, fields) {
+    summary.addded += 1;
+  },
+  changed(id, fields) {
+    summary.changed += 1;
+  },
+  removed(id) {
+    summary.removed += 1;
+  },
+});
+
+
+process.on('SIGINT', () => {
+  console.log('LinksObservable stopped. Summary:', summary);
+  process.exit();
+})

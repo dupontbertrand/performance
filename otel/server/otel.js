@@ -1,4 +1,3 @@
-import os from 'node:os';
 import { diag, DiagConsoleLogger, DiagLogLevel, trace, SpanStatusCode, context } from '@opentelemetry/api';
 import { PeriodicExportingMetricReader, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { BatchSpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -19,8 +18,8 @@ if (process.env.OTEL_DEBUG === '1') {
 }
 
 const serviceName = process.env.OTEL_SERVICE_NAME || 'meteor-host';
-const exportIntervalMs = Number(process.env.OTEL_METRICS_EXPORT_INTERVAL_MS || 60000);
 
+const exportIntervalMs = Number(process.env.OTEL_METRICS_EXPORT_INTERVAL_MS || 1000);
 // Respect OTEL_EXPORTER_OTLP_METRICS_ENDPOINT first, then generic OTEL_EXPORTER_OTLP_ENDPOINT.
 const collectorUrl =
   process.env.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT ||
@@ -88,54 +87,6 @@ const hostMetrics = new HostMetrics({
 });
 
 hostMetrics.start();
-
-const meter = meterProvider.getMeter('meteor-custom-metrics');
-const logicalCoreCount = Math.max(os.cpus()?.length || 1, 1);
-
-let lastCpuUsage = process.cpuUsage();
-let lastCpuCheckTime = process.hrtime.bigint();
-
-const cpuGauge = meter.createObservableGauge('meteorjs_cpu_utilization_ratio', {
-  description: 'Fraction (0-1) of total CPU capacity currently consumed by the Meteor Node.js process',
-});
-
-cpuGauge.addCallback((observableResult) => {
-  const nowHrTime = process.hrtime.bigint();
-  const nowUsage = process.cpuUsage();
-
-  const elapsedMicros = Number(nowHrTime - lastCpuCheckTime) / 1000;
-  const cpuMicros = (nowUsage.user - lastCpuUsage.user) + (nowUsage.system - lastCpuUsage.system);
-
-  let utilization = 0;
-  if (elapsedMicros > 0) {
-    utilization = cpuMicros / (elapsedMicros * logicalCoreCount);
-    if (Number.isFinite(utilization)) {
-      utilization = Math.min(Math.max(utilization, 0), 1);
-    } else {
-      utilization = 0;
-    }
-  }
-
-  observableResult.observe(utilization);
-
-  lastCpuUsage = nowUsage;
-  lastCpuCheckTime = nowHrTime;
-});
-
-const memoryGauge = meter.createObservableGauge('meteorjs_memory_usage_bytes', {
-  description: 'Memory footprint of the Meteor Node.js process split by region',
-});
-
-memoryGauge.addCallback((observableResult) => {
-  const memoryUsage = process.memoryUsage();
-  // console em GB
-  // console.log(`OTLP: Memory usage: RSS ${(memoryUsage.rss / (1024 ** 3)).toFixed(2)} GB, Heap Used ${(memoryUsage.heapUsed / (1024 ** 3)).toFixed(2)} GB`);
-  Object.entries(memoryUsage).forEach(([key, value]) => {
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      observableResult.observe(value, { memory_type: key });
-    }
-  });
-});
 
 // --- Roundtrip tracing for Meteor DDP publishes (links collection) -----------
 
