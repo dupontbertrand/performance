@@ -1,5 +1,5 @@
 // Initialize OpenTelemetry FIRST, before any other imports
-import { initOtel, createRoundtripTracer } from 'meteor/meteor-otel';
+import { initOtel, withSpan } from 'meteor/meteor-otel';
 
 initOtel({
   serviceName: process.env.OTEL_SERVICE_NAME || 'meteor-host',
@@ -12,7 +12,7 @@ import { Random } from 'meteor/random';
 import { check } from 'meteor/check';
 
 // Create a roundtrip tracer for the links collection
-const linksTracer = createRoundtripTracer('links.roundtrip');
+// const linksTracer = createRoundtripTracer('links.roundtrip');
 
 Meteor.startup(async () => {
   console.log('Server started');
@@ -21,45 +21,34 @@ Meteor.startup(async () => {
 
   Meteor.publish('links', function () {
     return LinksCollection.find({ scriptRunId: { $exists: false } });
-  });
+  }, { otel: true });
 
   Meteor.methods({
     async 'links.insert'(traceContext = {}) {
       const { sessionId, createdAt } = traceContext;
       check(sessionId, String);
 
-      const roundtrip = linksTracer.begin('links.insert->publish', {
-        'links.sessionId': sessionId,
-      });
-
-      let createdAtDate = createdAt;
-      if (!(createdAtDate instanceof Date)) {
-        createdAtDate = new Date(createdAtDate.$date);
-      }
-      if (!(createdAtDate instanceof Date) || Number.isNaN(createdAtDate.getTime())) {
-        const err = new Meteor.Error(
-          'invalid-createdAt',
-          'createdAt must be a valid Date supplied by the client'
-        );
-        roundtrip.fail(err);
-        throw err;
-      }
+      await withSpan('links.insert', 'FfirstSpan312', async () => {
+        //wait 1s
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }, { attributes: { 'links.sessionId': sessionId } });
+      let createdAtDate = new Date(createdAt);
 
       const doc = {
         _id: Random.id(),
         createdAt: new Date(createdAtDate.getTime()),
         sessionId,
       };
-
-      roundtrip.trackDocument('links', doc._id);
-
-      try {
-        await roundtrip.run(() => LinksCollection.insertAsync(doc));
-        return doc._id;
-      } catch (error) {
-        roundtrip.fail(error);
-        throw error;
-      }
+      
+      await withSpan('links.insert', 'insertInDb123', async () => { 
+        try {
+          await LinksCollection.insertAsync(doc)
+        } catch (error) {
+            throw error;
+        }
+      }, { attributes: { 'links.sessionId': sessionId, 'doc': doc } });
+      return doc._id;
+     
     },
     async 'links.clear'() {
       await LinksCollection.removeAsync({});
@@ -68,7 +57,7 @@ Meteor.startup(async () => {
       check(sessionId, String);
       await LinksCollection.removeAsync({ sessionId });
     },
-  });
+  }, { otel: true });
 });
 
 const summary = {
