@@ -1,9 +1,41 @@
 // Initialize OpenTelemetry FIRST, before any other imports
-import { initOtel, withSpan } from 'meteor/meteor-otel';
+import os from 'node:os';
+import { initOtel, withSpan, addEvent, createMetricsRecorder } from 'meteor/meteor-otel';
 
+// Initialize OpenTelemetry
 initOtel({
   serviceName: process.env.OTEL_SERVICE_NAME || 'meteor-host',
+  resourceAttributes: {
+    'deployment.environment': process.env.DEPLOYMENT_ENV || process.env.NODE_ENV || 'development',
+    'service.namespace': process.env.OTEL_SERVICE_NAMESPACE || 'meteor-apps',
+    'service.version': process.env.OTEL_SERVICE_VERSION || process.env.npm_package_version || '0.0.0',
+    'service.instance.id': `${os.hostname()}-${process.pid}`,
+  }
 });
+
+// Create the Metrics Recorder
+const appMetrics = createMetricsRecorder('links-app');
+
+// Counter - counts how many links were created
+const linksCreatedCounter = appMetrics.counter(
+  'links.created',
+  'Number of links created',
+  'links'
+);
+
+// Histogram - measures insertion latency
+const insertLatencyHistogram = appMetrics.histogram(
+  'links.insert.latency',
+  'Latency of link insertion',
+  'ms'
+);
+
+// UpDownCounter - counts active links (can go up or down)
+const activeLinksCounter = appMetrics.upDownCounter(
+  'links.active',
+  'Number of active links',
+  'links'
+);
 
 // Now import the rest
 import { Meteor } from 'meteor/meteor';
@@ -28,10 +60,20 @@ Meteor.startup(async () => {
       const { sessionId, createdAt } = traceContext;
       check(sessionId, String);
 
+      // Start latency measurement
+      const startTime = Date.now();
+
+      // Event: validation start
+      addEvent('validation.start', { sessionId });
+
       await withSpan('links.insert', 'FfirstSpan312', async () => {
         //wait 1s
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }, { attributes: { 'links.sessionId': sessionId } });
+
+      // Event: validation complete
+      addEvent('validation.complete', { sessionId, validated: true });
+
       let createdAtDate = new Date(createdAt);
 
       const doc = {
@@ -39,14 +81,21 @@ Meteor.startup(async () => {
         createdAt: new Date(createdAtDate.getTime()),
         sessionId,
       };
-      
-      await withSpan('links.insert', 'insertInDb123', async () => { 
+
+      await withSpan('links.insert', 'insertInDb123', async () => {
         try {
           await LinksCollection.insertAsync(doc)
         } catch (error) {
             throw error;
         }
       }, { attributes: { 'links.sessionId': sessionId, 'doc': doc } });
+
+      // Record metrics
+      const latency = Date.now() - startTime;
+      linksCreatedCounter.add(1, { sessionId });
+      insertLatencyHistogram.record(latency, { sessionId });
+      activeLinksCounter.add(1, { sessionId });
+
       return doc._id;
      
     },
@@ -75,6 +124,8 @@ export const LinksObservable = LinksCollection.find().observeChanges({
   },
   removed(id) {
     summary.removed += 1;
+    // Decrement active links counter
+    activeLinksCounter.add(-1);
   },
 });
 
