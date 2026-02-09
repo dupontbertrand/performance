@@ -76,20 +76,6 @@ services:
     ports:
       - "9090:9090"
 
-  # loki:
-  #   image: grafana/loki:2.9.4
-  #   container_name: loki
-  #   ports:
-  #     - "3100:3100"
-  #   command: -config.file=/etc/loki/local-config.yaml
-  #   volumes:
-  #     - ./infra/loki-config.yaml:/etc/loki/local-config.yaml
-  #     - ./data/loki-data:/loki
-  #   restart: unless-stopped
-  #   environment:
-  #     - TZ=America/Sao_Paulo
-  #   depends_on:
-  #     - prometheus
 
   tempo:
     image: grafana/tempo:2.9.0

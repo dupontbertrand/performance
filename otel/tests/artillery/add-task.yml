@@ -2,7 +2,7 @@ config:
   target: "ws://localhost:8080/websocket"
   phases:
     - duration: 120
-      arrivalRate: 6
+      arrivalRate: 40
   engines:
     ws: {}
   processor: "./processors.js"
