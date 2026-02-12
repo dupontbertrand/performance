@@ -74,11 +74,4 @@ export const LinksObservable = LinksCollection.find().observeChanges({
   },
 });
 
-process.on('SIGINT', async () => {
-  console.log('Memory peaks (GB):', Object.fromEntries(
-    Object.entries(memoryPeaks).map(([key, value]) => [key, Math.round((value / 1024 / 1024 / 1024) * 100) / 100])
-  ));
-  process.exit();
-});
-
-
+process.on('SIGINT', async () => { console.log('Summary of changes: ', summary); process.exit(); });
