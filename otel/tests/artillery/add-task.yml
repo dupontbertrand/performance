@@ -1,8 +1,9 @@
 config:
+  # target: "wss://meteor35.meteorapp.com/websocket"
   target: "ws://localhost:8080/websocket"
   phases:
     - duration: 120
-      arrivalRate: 40
+      arrivalRate: 13
   engines:
     ws: {}
   processor: "./processors.js"
@@ -16,6 +17,6 @@ scenarios:
       - function: "subscribeLinks"
       - loop:
           - function: "insertTask"
-          - think: "0.1s"
+          - think: "0.5s"
         count: 10
       - function: "clearSession"

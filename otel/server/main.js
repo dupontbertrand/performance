@@ -1,6 +1,3 @@
-import os from 'node:os';
-import { initOtel } from 'meteor/meteor-otel';
-
 import { Meteor } from 'meteor/meteor';
 import { LinksCollection } from '/imports/api/links';
 import { Random } from 'meteor/random';
@@ -10,16 +7,6 @@ Meteor.startup(async () => {
   console.log('Server started');
   console.log(`MongoDB URL: ${process.env.MONGO_URL}`);
   console.log(`MongoDB Oplog URL: ${process.env.MONGO_OPLOG_URL}`);
-
-  initOtel({
-    serviceName: process.env.OTEL_SERVICE_NAME || 'meteor-host',
-    resourceAttributes: {
-      'deployment.environment': process.env.DEPLOYMENT_ENV || process.env.NODE_ENV || 'development',
-      'service.namespace': process.env.OTEL_SERVICE_NAMESPACE || 'meteor-apps',
-      'service.version': process.env.OTEL_SERVICE_VERSION || process.env.npm_package_version || '0.0.0',
-      'service.instance.id': `${os.hostname()}-${process.pid}`,
-    }
-  });
   
   await LinksCollection.removeAsync({});
 
