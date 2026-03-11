@@ -1,19 +1,21 @@
 {
   "galaxy.meteor.com": {
     "env": {
-        "MONGO_URL": "mongodb://user:pass@servers/?replicaSet=<replica-server>&ssl=true&tlsAllowInvalidCertificates=true",
-        "MONGO_OPLOG_URL": "mongodb://user:pass@servers/local?replicaSet=replica-server>&authSource=admin&ssl=true&tlsAllowInvalidCertificates=true",
-        "GALAXY_NODE_OPTIONS": "--max-old-space-size=6400"
+      "MONGO_URL": "mongodb://user:pass@servers/?replicaSet=<replica-server>&ssl=true&tlsAllowInvalidCertificates=true",
+      "MONGO_OPLOG_URL": "mongodb://user:pass@servers/local?replicaSet=replica-server>&authSource=admin&ssl=true&tlsAllowInvalidCertificates=true",
+      "GALAXY_NODE_OPTIONS": "--max-old-space-size=6400"
     }
   },
-"monti": { 
-  "appId": "", 
-  "appSecret": "" 
- },
+  "monti": {
+    "appId": "",
+    "appSecret": ""
+  },
   "packages": {
     "mongo": {
       "options": {},
-      "reactivity": ["changeStreams"]
+      "reactivity": [
+        "changeStreams"
+      ]
     }
   }
 }

@@ -2,8 +2,17 @@ config:
   # target: "wss://meteor35.meteorapp.com/websocket"
   target: "ws://localhost:8080/websocket"
   phases:
+    - duration: 60
+      arrivalRate: 1
+      rampTo: 15
+      name: "Warm up"
+    - duration: 60
+      arrivalRate: 15
+      rampTo: 30
+      name: "Load increase"
     - duration: 120
-      arrivalRate: 13
+      arrivalRate: 30
+      name: "Peak load"
   engines:
     ws: {}
   processor: "./processors.js"

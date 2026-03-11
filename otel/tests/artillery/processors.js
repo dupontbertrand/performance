@@ -180,6 +180,14 @@ function ensureDdpMessageHandler(context, events) {
 }
 
 function initSession(context, events, done) {
+  if (!global.errorListenerInstalled) {
+    events.on('error', (err) => {
+      console.error('\n🚨 ending the test on the first error or timeout:', err.message);
+      process.exit(1);
+    });
+    global.errorListenerInstalled = true;
+  }
+
   context.vars.sessionId = randomSessionId();
   context.vars.methodSeq = 0;
   context.vars.subSeq = 0;
@@ -194,7 +202,7 @@ function connectToDdp(context, events, done) {
     (payload) => payload.msg === 'connected' || payload.msg === 'failed',
     (payload) => {
       if (payload.msg === 'failed') {
-        throw new Error(`Não foi possível conectar ao DDP: ${payload.reason ?? 'motivo desconhecido'}`);
+        throw new Error(`Could not connect to DDP: ${payload.reason ?? 'unknown reason'}`);
       }
     },
     10_000,
@@ -220,7 +228,7 @@ function callMethod(context, events, method, params, options = {}) {
     (payload) => payload.msg === 'result' && payload.id === id,
     (payload) => {
       if (payload.error) {
-        const { message = 'Erro desconhecido ao chamar método Meteor', details } = payload.error;
+        const { message = 'Unknown error when calling Meteor method', details } = payload.error;
         const error = new Error(message);
         if (details) {
           error.details = details;
@@ -261,8 +269,8 @@ function subscribeLinks(context, events, done) {
       (payload.msg === 'nosub' && payload.id === subId),
     (payload) => {
       if (payload.msg === 'nosub') {
-        const reason = payload.error?.reason ?? 'motivo desconhecido';
-        throw new Error(`Falha ao assinar publicação links: ${reason}`);
+        const reason = payload.error?.reason ?? 'unknown reason';
+        throw new Error(`Failed to subscribe to links publication: ${reason}`);
       }
     },
   )

@@ -302,9 +302,8 @@ Notes
 
 ## Load & Click Testing
 
-There are two ways to generate load:
 
-1) HTTP/WS load via Artillery (DDP protocol over WebSocket)
+HTTP/WS load via Artillery (DDP protocol over WebSocket)
 
 - Scenario at `tests/artillery/add-task.yml`
 - Processors at `tests/artillery/processors.js` implement DDP connect/sub/methods and histogram metric `links_roundtrip_createdAt_ms`
@@ -316,17 +315,6 @@ npx artillery run tests/artillery/add-task.yml
 ```
 
 Note: the Artillery config points to `ws://localhost:8080/websocket`. Either run Meteor with `PORT=8080` or change the target to `ws://localhost:3000/websocket`.
-
-2) Browser clicker via Puppeteer
-
-- Script: `scripts/click-inserir-data.mjs`
-- Opens multiple browser windows and clicks `addTask` repeatedly
-
-Run it:
-
-```bash
-node scripts/click-inserir-data.mjs
-```
 
 There is also a convenience npm script to run Artillery and a Mongo workload concurrently:
 

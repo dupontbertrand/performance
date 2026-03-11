@@ -1,13 +1,13 @@
 import { Meteor } from 'meteor/meteor';
+import { Mongo } from 'meteor/mongo';
 import { LinksCollection } from '/imports/api/links';
-import { Random } from 'meteor/random';
 import { check } from 'meteor/check';
 
 Meteor.startup(async () => {
   console.log('Server started');
   console.log(`MongoDB URL: ${process.env.MONGO_URL}`);
   console.log(`MongoDB Oplog URL: ${process.env.MONGO_OPLOG_URL}`);
-  
+
   await LinksCollection.removeAsync({});
 
   Meteor.publish('links', function () {
@@ -22,14 +22,15 @@ Meteor.startup(async () => {
       let createdAtDate = new Date(createdAt);
 
       const doc = {
-        _id: Random.id(),
         createdAt: new Date(createdAtDate.getTime()),
         sessionId,
       };
 
-      await LinksCollection.insertAsync(doc)
-      return doc._id;
-     
+      //objectid
+      doc.debugID = new Mongo.ObjectID();
+      const id = await LinksCollection.insertAsync(doc);
+      return id;
+
     },
     async 'links.clear'() {
       await LinksCollection.removeAsync({});

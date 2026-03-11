@@ -51,23 +51,29 @@ export const Info = () => {
       ) : (
         <>
           <p><strong>Session ID:</strong> {sessionIdRef.current}</p>
-          <form onSubmit={onSubmit} style={{marginBottom: '1rem'}}>
+          <form onSubmit={onSubmit} style={{ marginBottom: '1rem' }}>
             <button type="submit" data-testid='add-item'>addTask</button>
-            <button type="button" onClick={onClear} style={{marginLeft: '1rem', background: '#e74c3c', color: '#fff'}}>EraseDB</button>
+            <button type="button" onClick={onClear} style={{ marginLeft: '1rem', background: '#e74c3c', color: '#fff' }}>EraseDB</button>
             <button
               type="button"
               onClick={onClearMine}
-              style={{marginLeft: '1rem', background: '#2980b9', color: '#fff'}}
+              style={{ marginLeft: '1rem', background: '#2980b9', color: '#fff' }}
             >
               EraseSession
             </button>
           </form>
           <ul>{links.map(
-            link => <li key={link._id}>
-              <span>
-                <strong>ID:</strong> {link._id} | <strong>createdAt:</strong> {link.createdAt ? new Date(link.createdAt).toLocaleString() : 'N/A'} | <strong>session:</strong> {link.sessionId ?? 'N/A'}
-              </span>
-            </li>
+            link => {
+              // console.log(link)
+              const strId = typeof link._id === 'object' ? link._id.toHexString() : link._id;
+              return (
+                <li key={strId}>
+                  <span>
+                    <strong>ID:</strong> {strId} | <strong>createdAt:</strong> {link.createdAt ? new Date(link.createdAt).toLocaleString() : 'N/A'} | <strong>session:</strong> {link.sessionId ?? 'N/A'}
+                  </span>
+                </li>
+              );
+            }
           )}</ul>
         </>
       )}
