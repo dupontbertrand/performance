@@ -115,11 +115,14 @@ jobs:
           node bench.js compare \
             --baseline results/baseline.json \
             --target results/target.json \
-            --format markdown > results/report.md
+            --format markdown > results/report.md || true
           cat results/report.md
-          # Store exit code (0 = pass, 1 = regression)
-          echo "passed=$?" >> $GITHUB_OUTPUT
-        continue-on-error: true
+          # Check if regression was detected (file contains "regression")
+          if grep -q "regression" results/report.md; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Push results to dashboard
         if: env.BENCH_API_KEY != ''
