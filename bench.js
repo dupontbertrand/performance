@@ -120,10 +120,15 @@ async function cmdRun() {
 
   // GC monitor: inject into Meteor's server process via SERVER_NODE_OPTIONS
   const gcMonitorPath = path.resolve(__dirname, 'collectors/gc-monitor.js');
-  const gcOutputPath = path.resolve(__dirname, 'results', `gc-${tag}-${Date.now()}.json`);
+  const resultsDir = path.resolve(__dirname, 'results');
+  if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
+  const gcOutputPath = path.join(resultsDir, `gc-${tag}-${Date.now()}.json`);
   const serverNodeOptions = `--require ${gcMonitorPath}`;
+  console.log(`GC monitor: ${gcMonitorPath}`);
+  console.log(`GC output: ${gcOutputPath}`);
 
-  console.log('Starting Meteor app (with GC monitor)...');
+  console.log(`Starting Meteor app (with GC monitor)...`);
+  console.log(`SERVER_NODE_OPTIONS=${serverNodeOptions}`);
   const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
     cwd: app.path,
     env: {
@@ -214,7 +219,12 @@ async function cmdRun() {
       console.error('Could not read GC metrics:', err.message);
     }
   } else {
-    console.log('GC metrics not collected (gc-monitor may not have been loaded)');
+    console.log(`GC metrics not collected — file not found: ${gcOutputPath}`);
+    // List results dir to debug
+    try {
+      const files = fs.readdirSync(resultsDir).filter(f => f.startsWith('gc-'));
+      if (files.length > 0) console.log(`  Found GC files: ${files.join(', ')}`);
+    } catch {}
   }
 
   // Build and write result
