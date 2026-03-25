@@ -70,7 +70,9 @@ jobs:
 
       - name: Clone Meteor core
         run: |
-          git clone --depth 50 https://github.com/${{ steps.params.outputs.meteor_repo }}.git $METEOR_REPO
+          git clone --no-single-branch --depth 50 https://github.com/${{ steps.params.outputs.meteor_repo }}.git $METEOR_REPO
+          cd $METEOR_REPO
+          git fetch --tags --depth 50 origin ${{ steps.params.outputs.baseline }} ${{ steps.params.outputs.branch }}
 
       - name: Install app dependencies
         run: npm install
