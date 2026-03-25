@@ -4,6 +4,13 @@ import { check } from 'meteor/check';
 
 const Baselines = new Mongo.Collection('baselines');
 
+// Deny all direct client-side writes — only server methods allowed
+Baselines.deny({
+  insert() { return true; },
+  update() { return true; },
+  remove() { return true; },
+});
+
 if (Meteor.isServer) {
   Baselines.createIndexAsync({ scenario: 1 }, { unique: true });
 

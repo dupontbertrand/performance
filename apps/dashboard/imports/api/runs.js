@@ -4,6 +4,13 @@ import { check, Match } from 'meteor/check';
 
 const Runs = new Mongo.Collection('runs');
 
+// Deny all direct client-side writes — only server methods allowed
+Runs.deny({
+  insert() { return true; },
+  update() { return true; },
+  remove() { return true; },
+});
+
 if (Meteor.isServer) {
   Runs.createIndexAsync({ timestamp: -1 });
   Runs.createIndexAsync({ tag: 1, scenario: 1 });
