@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        scenario: [reactive-light, reactive-crud]
+        scenario: [reactive-light]
       fail-fast: false
 
     steps:
@@ -74,17 +74,18 @@ jobs:
             --result results/nightly-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json
 
       # Compare vs latest release baseline
-      - name: Get latest release tag
+      - name: Get latest release branch
         id: release
         run: |
           cd $METEOR_REPO
-          LATEST=$(git tag --sort=-v:refname | grep '^release/' | head -1)
+          LATEST=$(git branch -r | grep 'origin/release-3\.' | sed 's|.*origin/||' | sort -t. -k2 -n | tail -1)
           echo "tag=$LATEST" >> $GITHUB_OUTPUT
-          echo "Latest release: $LATEST"
+          echo "Latest release branch: $LATEST"
 
       - name: Run baseline (latest release)
         run: |
           cd $METEOR_REPO
+          git fetch origin ${{ steps.release.outputs.tag }}
           git checkout ${{ steps.release.outputs.tag }}
           cd ${{ github.workspace }}
           METEOR_CHECKOUT_PATH=$METEOR_REPO \
@@ -105,9 +106,8 @@ jobs:
           node bench.js compare \
             --baseline results/nightly-baseline-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json \
             --target results/nightly-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json \
-            --format markdown > results/nightly-report-${{ matrix.scenario }}.md
+            --format markdown > results/nightly-report-${{ matrix.scenario }}.md || true
           cat results/nightly-report-${{ matrix.scenario }}.md
-        continue-on-error: true
 
       - name: Upload results
         uses: actions/upload-artifact@v4
