@@ -69,9 +69,15 @@ jobs:
 
       - name: Push results to dashboard
         if: env.BENCH_API_KEY != ''
-        timeout-minutes: 2
+        timeout-minutes: 8
         run: |
-          curl -s https://meteor-benchmark.meteorapp.com > /dev/null && sleep 15
+          for i in $(seq 1 30); do
+            if curl -sf https://meteor-benchmark.meteorapp.com > /dev/null 2>&1; then
+              echo "Dashboard is up"; break
+            fi
+            echo "Waiting for dashboard cold start... ($i/30)"
+            sleep 10
+          done
           node bench.js push \
             --result results/nightly-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json
 
@@ -98,7 +104,7 @@ jobs:
 
       - name: Push baseline to dashboard
         if: env.BENCH_API_KEY != ''
-        timeout-minutes: 2
+        timeout-minutes: 8
         run: |
           node bench.js push \
             --result results/nightly-baseline-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json
