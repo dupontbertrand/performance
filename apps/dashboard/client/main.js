@@ -8,6 +8,7 @@ import '../imports/ui/pages/dashboard.js';
 import '../imports/ui/pages/compare.js';
 import '../imports/ui/pages/trends.js';
 import '../imports/ui/pages/detail.js';
+import '../imports/ui/pages/scenario.js';
 
 // Routes
 FlowRouter.route('/', {
@@ -35,5 +36,12 @@ FlowRouter.route('/run/:id', {
   name: 'detail',
   action() {
     this.render('mainLayout', { content: 'detail' });
+  },
+});
+
+FlowRouter.route('/scenario/:name', {
+  name: 'scenario',
+  action() {
+    this.render('mainLayout', { content: 'scenario' });
   },
 });
