@@ -126,7 +126,10 @@ jobs:
 
       - name: Push results to dashboard
         if: env.BENCH_API_KEY != ''
+        timeout-minutes: 2
         run: |
+          # Wake up Galaxy free tier (cold start)
+          curl -s https://meteor-benchmark.meteorapp.com > /dev/null && sleep 15
           node bench.js push --result results/baseline.json || true
           node bench.js push --result results/target.json || true
 
