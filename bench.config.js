@@ -49,6 +49,16 @@ module.exports = {
       config: 'artillery/non-reactive-stress.yml',
       description: 'Methods-only CRUD with 240 browser VUs',
     },
+    'ddp-reactive-light': {
+      driver: 'artillery',
+      config: 'artillery/ddp-reactive-light.yml',
+      description: 'DDP-only reactive CRUD with 150 VUs (no browser)',
+    },
+    'ddp-non-reactive-light': {
+      driver: 'artillery',
+      config: 'artillery/ddp-non-reactive-light.yml',
+      description: 'DDP-only methods CRUD with 150 VUs (no browser)',
+    },
     'cold-start': {
       driver: 'cli',
       description: 'App startup time from clean state (meteor reset)',
