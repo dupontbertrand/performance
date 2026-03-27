@@ -101,8 +101,13 @@ async function cmdRun() {
   console.log(`   Tag: ${tag}\n`);
 
   if (scenario.driver === 'cli') {
+    if (scenarioName === 'cold-start') {
+      return cmdColdStart({ scenarioName, appName, app, tag, outputPath, info });
+    }
+    if (scenarioName === 'bundle-size') {
+      return cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info });
+    }
     console.log(`CLI scenario "${scenarioName}" — not yet implemented.`);
-    console.log('This will measure cold-start, hot-reload, or bundle-size.');
     process.exit(0);
   }
 
@@ -246,6 +251,147 @@ async function cmdRun() {
     if (r.cpu) console.log(`${r.name} CPU: avg ${r.cpu.avg}% max ${r.cpu.max}%`);
     if (r.memory) console.log(`${r.name} RAM: avg ${r.memory.avg_mb}MB max ${r.memory.max_mb}MB`);
   }
+}
+
+async function cmdColdStart({ scenarioName, appName, app, tag, outputPath, info }) {
+  const meteorCmd = getMeteorCmd();
+  const runs = parseInt(args.runs || '3', 10);
+  const startupTimes = [];
+
+  console.log(`\nCold-start benchmark: ${runs} runs\n`);
+
+  for (let i = 0; i < runs; i++) {
+    console.log(`--- Run ${i + 1}/${runs} ---`);
+
+    // Clean state
+    execSync(`${meteorCmd} reset`, { cwd: app.path, stdio: 'inherit' });
+
+    // Start Meteor
+    const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
+      cwd: app.path,
+      env: {
+        ...process.env,
+        METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
+        METEOR_NO_DEPRECATION: 'true',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    meteorProc.stdout.on('data', (d) => process.stderr.write(d));
+    meteorProc.stderr.on('data', (d) => process.stderr.write(d));
+
+    const startTime = Date.now();
+    waitForApp(config.appPort);
+    const startupMs = Date.now() - startTime;
+    startupTimes.push(startupMs);
+    console.log(`Startup: ${(startupMs / 1000).toFixed(1)}s`);
+
+    // Stop Meteor
+    meteorProc.kill('SIGTERM');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  // Sort and take median
+  startupTimes.sort((a, b) => a - b);
+  const median = startupTimes[Math.floor(startupTimes.length / 2)];
+  const min = startupTimes[0];
+  const max = startupTimes[startupTimes.length - 1];
+
+  console.log(`\nResults: median=${(median / 1000).toFixed(1)}s min=${(min / 1000).toFixed(1)}s max=${(max / 1000).toFixed(1)}s`);
+
+  const result = buildResult({
+    scenario: scenarioName,
+    app: appName,
+    tag,
+    meteorCheckoutPath: config.meteorCheckoutPath,
+    collectorResults: [{
+      metric: 'cold_start',
+      startup_median_ms: median,
+      startup_min_ms: min,
+      startup_max_ms: max,
+      runs: startupTimes,
+    }],
+    wallClockMs: median,
+  });
+
+  writeResult(result, outputPath);
+  appendToHistory(result, config.results.history);
+  console.log(`Results written to: ${outputPath}`);
+}
+
+async function cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info }) {
+  const meteorCmd = getMeteorCmd();
+  const buildDir = path.join('/tmp', `meteor-bundle-${Date.now()}`);
+
+  console.log(`\nBundle size benchmark\n`);
+
+  // Install deps if needed
+  const nodeModulesPath = path.join(app.path, 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    console.log('Installing app npm dependencies...');
+    execSync('npm install', { cwd: app.path, stdio: 'inherit' });
+  }
+
+  // Build
+  console.log('Building production bundle...');
+  const buildStart = Date.now();
+  execSync(`${meteorCmd} build ${buildDir} --directory`, {
+    cwd: app.path,
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
+    },
+  });
+  const buildTimeMs = Date.now() - buildStart;
+  console.log(`Build time: ${(buildTimeMs / 1000).toFixed(1)}s`);
+
+  // Measure client bundle size
+  const webBrowserDir = path.join(buildDir, 'bundle', 'programs', 'web.browser');
+  let clientSizeKb = 0;
+  if (fs.existsSync(webBrowserDir)) {
+    const jsFiles = fs.readdirSync(webBrowserDir).filter(f => f.endsWith('.js'));
+    for (const f of jsFiles) {
+      clientSizeKb += fs.statSync(path.join(webBrowserDir, f)).size / 1024;
+    }
+  }
+
+  // Measure server bundle size
+  const serverDir = path.join(buildDir, 'bundle', 'programs', 'server');
+  let serverSizeKb = 0;
+  if (fs.existsSync(serverDir)) {
+    const du = execSync(`du -sk "${serverDir}"`, { encoding: 'utf8' }).trim();
+    serverSizeKb = parseInt(du.split('\t')[0], 10);
+  }
+
+  // Total bundle
+  const totalDu = execSync(`du -sk "${path.join(buildDir, 'bundle')}"`, { encoding: 'utf8' }).trim();
+  const totalSizeKb = parseInt(totalDu.split('\t')[0], 10);
+
+  console.log(`Client JS: ${clientSizeKb.toFixed(0)} KB`);
+  console.log(`Server: ${serverSizeKb} KB`);
+  console.log(`Total bundle: ${totalSizeKb} KB`);
+
+  // Cleanup
+  execSync(`rm -rf "${buildDir}"`);
+
+  const result = buildResult({
+    scenario: scenarioName,
+    app: appName,
+    tag,
+    meteorCheckoutPath: config.meteorCheckoutPath,
+    collectorResults: [{
+      metric: 'bundle_size',
+      client_js_kb: Math.round(clientSizeKb),
+      server_kb: serverSizeKb,
+      total_kb: totalSizeKb,
+      build_time_ms: buildTimeMs,
+    }],
+    wallClockMs: buildTimeMs,
+  });
+
+  writeResult(result, outputPath);
+  appendToHistory(result, config.results.history);
+  console.log(`Results written to: ${outputPath}`);
 }
 
 function cmdCompare() {
