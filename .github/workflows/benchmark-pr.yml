@@ -130,7 +130,7 @@ jobs:
         run: |
           # Wake up Galaxy free tier (cold start can take up to 5 min)
           for i in $(seq 1 30); do
-            if curl -sf https://meteor-benchmark.meteorapp.com > /dev/null 2>&1; then
+            if curl -sf https://meteor-benchmark-dashboard.sandbox.galaxycloud.app > /dev/null 2>&1; then
               echo "Dashboard is up"; break
             fi
             echo "Waiting for dashboard cold start... ($i/30)"
