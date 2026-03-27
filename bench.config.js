@@ -59,6 +59,18 @@ module.exports = {
       config: 'artillery/ddp-non-reactive-light.yml',
       description: 'DDP-only methods CRUD with 150 VUs (no browser)',
     },
+    'fanout-light': {
+      driver: 'script',
+      script: 'tests/fanout-bench.js',
+      args: '--subscribers 50 --writes 30',
+      description: 'Reactive fanout: 50 subscribers, 1 writer, measure propagation latency',
+    },
+    'fanout-heavy': {
+      driver: 'script',
+      script: 'tests/fanout-bench.js',
+      args: '--subscribers 200 --writes 50',
+      description: 'Reactive fanout: 200 subscribers, 1 writer, measure propagation latency',
+    },
     'cold-start': {
       driver: 'cli',
       description: 'App startup time from clean state (meteor reset)',
