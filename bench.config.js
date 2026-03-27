@@ -89,7 +89,7 @@ module.exports = {
   },
 
   // Dashboard
-  dashboardUrl: process.env.BENCH_DASHBOARD_URL || 'ws://localhost:4000/websocket',
+  dashboardUrl: process.env.BENCH_DASHBOARD_URL?.trim() || 'ws://localhost:4000/websocket',
   dashboardApiKey: process.env.BENCH_API_KEY || 'dev-bench-key-change-in-prod',
 
   // Output paths
