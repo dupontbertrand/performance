@@ -100,6 +100,14 @@ module.exports = {
     gc_major_ms:         { warn: 25, fail: 60 },
   },
 
+  // Environment variables to capture as run config flags.
+  // Each entry maps an env-var name to a human-readable label used in reports/dashboard.
+  configFlags: {
+    DDP_TRANSPORT: 'transport',     // "sockjs" | "uws"
+    DDP_SERIALIZER: 'serializer',   // "ejson" | "cbor" (future)
+    MONGO_OPLOG_URL: 'oplog',       // truthy → oplog enabled
+  },
+
   // Dashboard
   dashboardUrl: process.env.BENCH_DASHBOARD_URL?.trim() || 'ws://localhost:4000/websocket',
   dashboardApiKey: process.env.BENCH_API_KEY || 'dev-bench-key-change-in-prod',

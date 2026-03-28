@@ -260,6 +260,8 @@ async function cmdRun() {
     meteorCheckoutPath: config.meteorCheckoutPath,
     collectorResults,
     wallClockMs,
+    extraEnv,
+    configFlags: config.configFlags,
   });
 
   writeResult(result, outputPath);
@@ -400,6 +402,8 @@ async function cmdScript({ scenarioName, scenario, appName, app, tag, outputPath
     meteorCheckoutPath: config.meteorCheckoutPath,
     collectorResults,
     wallClockMs,
+    extraEnv,
+    configFlags: config.configFlags,
   });
 
   writeResult(result, outputPath);
@@ -475,6 +479,8 @@ async function cmdColdStart({ scenarioName, appName, app, tag, outputPath, info 
       runs: startupTimes,
     }],
     wallClockMs: median,
+    extraEnv,
+    configFlags: config.configFlags,
   });
 
   writeResult(result, outputPath);
@@ -551,6 +557,8 @@ async function cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info
       build_time_ms: buildTimeMs,
     }],
     wallClockMs: buildTimeMs,
+    extraEnv,
+    configFlags: config.configFlags,
   });
 
   writeResult(result, outputPath);

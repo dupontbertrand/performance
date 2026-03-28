@@ -58,7 +58,7 @@ jobs:
           METEOR_CHECKOUT_PATH=$METEOR_REPO \
           node bench.js run \
             --scenario ${{ inputs.scenario }} \
-            --tag "${{ inputs.branch }}-${{ matrix.transport }}" \
+            --tag "${{ inputs.branch }}" \
             --env DDP_TRANSPORT=${{ matrix.transport }} \
             --output results/${{ matrix.transport }}.json
 
