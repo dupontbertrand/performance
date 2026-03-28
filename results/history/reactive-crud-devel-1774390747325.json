@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-03-24T22:19:07.314Z",
+  "tag": "devel",
+  "meteor": {
+    "version": "release/METEOR@3.4-141-g86bdc07e1a",
+    "sha": "86bdc07e1a"
+  },
+  "scenario": "reactive-crud",
+  "app": "tasks-3.x",
+  "wall_clock_ms": 688544,
+  "metrics": {
+    "app_resources": {
+      "metric": "app_resources",
+      "name": "APP",
+      "pid": 300051,
+      "samples": 686,
+      "cpu": {
+        "avg": 16.95,
+        "max": 165,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 478.49,
+        "max_mb": 573.63,
+        "unit": "MB"
+      }
+    },
+    "db_resources": {
+      "metric": "db_resources",
+      "name": "DB",
+      "pid": 299708,
+      "samples": 687,
+      "cpu": {
+        "avg": 2.44,
+        "max": 10,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 133.12,
+        "max_mb": 155.59,
+        "unit": "MB"
+      }
+    }
+  }
+}

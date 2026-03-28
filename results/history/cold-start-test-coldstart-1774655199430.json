@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-03-27T23:46:39.430Z",
+  "tag": "test-coldstart",
+  "meteor": {
+    "version": "release/METEOR@3.4-154-gdb1e00bbe3",
+    "sha": "db1e00bbe3"
+  },
+  "scenario": "cold-start",
+  "app": "tasks-3.x",
+  "wall_clock_ms": 21119,
+  "metrics": {
+    "cold_start": {
+      "metric": "cold_start",
+      "startup_median_ms": 21119,
+      "startup_min_ms": 20605,
+      "startup_max_ms": 21119,
+      "runs": [
+        20605,
+        21119
+      ]
+    }
+  }
+}

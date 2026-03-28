@@ -1,0 +1,1 @@
+{"metric":"gc","unit":"ms","total_pause_ms":47.67,"count":31,"max_pause_ms":8.71,"avg_pause_ms":1.54,"minor":{"count":23,"total_ms":30.72},"major":{"count":4,"total_ms":15.41},"incremental":{"count":4,"total_ms":1.54},"weakcb":{"count":0,"total_ms":0}}

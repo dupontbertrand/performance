@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-03-24T21:56:06.410Z",
+  "tag": "test-run",
+  "meteor": {
+    "version": "release/METEOR@3.5-beta.7-30-ga7622418f1",
+    "sha": "a7622418f1"
+  },
+  "scenario": "reactive-crud",
+  "app": "tasks-3.x",
+  "wall_clock_ms": 185479,
+  "metrics": {
+    "db_resources": {
+      "metric": "db_resources",
+      "name": "DB",
+      "pid": 288689,
+      "samples": 186,
+      "cpu": {
+        "avg": 0.44,
+        "max": 2,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 144.99,
+        "max_mb": 145.13,
+        "unit": "MB"
+      }
+    }
+  }
+}

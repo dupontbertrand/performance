@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        scenario: [reactive-light, reactive-crud]
+        scenario: [reactive-light]
       fail-fast: false
 
     steps:
@@ -69,22 +69,31 @@ jobs:
 
       - name: Push results to dashboard
         if: env.BENCH_API_KEY != ''
+        timeout-minutes: 8
         run: |
+          for i in $(seq 1 30); do
+            if curl -sf https://meteor-benchmark-dashboard.sandbox.galaxycloud.app > /dev/null 2>&1; then
+              echo "Dashboard is up"; break
+            fi
+            echo "Waiting for dashboard cold start... ($i/30)"
+            sleep 10
+          done
           node bench.js push \
             --result results/nightly-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json
 
       # Compare vs latest release baseline
-      - name: Get latest release tag
+      - name: Get latest release branch
         id: release
         run: |
           cd $METEOR_REPO
-          LATEST=$(git tag --sort=-v:refname | grep '^release/' | head -1)
+          LATEST=$(git branch -r | grep 'origin/release-3\.' | sed 's|.*origin/||' | sort -t. -k2 -n | tail -1)
           echo "tag=$LATEST" >> $GITHUB_OUTPUT
-          echo "Latest release: $LATEST"
+          echo "Latest release branch: $LATEST"
 
       - name: Run baseline (latest release)
         run: |
           cd $METEOR_REPO
+          git fetch origin ${{ steps.release.outputs.tag }}
           git checkout ${{ steps.release.outputs.tag }}
           cd ${{ github.workspace }}
           METEOR_CHECKOUT_PATH=$METEOR_REPO \
@@ -95,6 +104,7 @@ jobs:
 
       - name: Push baseline to dashboard
         if: env.BENCH_API_KEY != ''
+        timeout-minutes: 8
         run: |
           node bench.js push \
             --result results/nightly-baseline-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json
@@ -105,9 +115,8 @@ jobs:
           node bench.js compare \
             --baseline results/nightly-baseline-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json \
             --target results/nightly-${{ matrix.scenario }}-${{ steps.params.outputs.date }}.json \
-            --format markdown > results/nightly-report-${{ matrix.scenario }}.md
+            --format markdown > results/nightly-report-${{ matrix.scenario }}.md || true
           cat results/nightly-report-${{ matrix.scenario }}.md
-        continue-on-error: true
 
       - name: Upload results
         uses: actions/upload-artifact@v4

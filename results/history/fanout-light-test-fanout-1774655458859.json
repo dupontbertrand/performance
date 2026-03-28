@@ -1,0 +1,72 @@
+{
+  "timestamp": "2026-03-27T23:50:58.859Z",
+  "tag": "test-fanout",
+  "meteor": {
+    "version": "release/METEOR@3.4-154-gdb1e00bbe3",
+    "sha": "db1e00bbe3"
+  },
+  "scenario": "fanout-light",
+  "app": "tasks-3.x",
+  "wall_clock_ms": 4066,
+  "metrics": {
+    "app_resources": {
+      "metric": "app_resources",
+      "name": "APP",
+      "pid": 204548,
+      "samples": 4,
+      "cpu": {
+        "avg": 56.68,
+        "max": 86,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 220.13,
+        "max_mb": 262.5,
+        "unit": "MB"
+      }
+    },
+    "db_resources": {
+      "metric": "db_resources",
+      "name": "DB",
+      "pid": 204441,
+      "samples": 5,
+      "cpu": {
+        "avg": 0.6,
+        "max": 2,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 151.43,
+        "max_mb": 151.75,
+        "unit": "MB"
+      }
+    },
+    "gc": {
+      "metric": "gc",
+      "unit": "ms",
+      "total_pause_ms": 145.53,
+      "count": 77,
+      "max_pause_ms": 7.29,
+      "avg_pause_ms": 1.89,
+      "minor": {
+        "count": 71,
+        "total_ms": 135.6
+      },
+      "major": {
+        "count": 3,
+        "total_ms": 8.31
+      },
+      "incremental": {
+        "count": 3,
+        "total_ms": 1.62
+      },
+      "weakcb": {
+        "count": 0,
+        "total_ms": 0
+      }
+    },
+    "fanout": {
+      "metric": "fanout"
+    }
+  }
+}

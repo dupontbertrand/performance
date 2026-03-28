@@ -1,0 +1,69 @@
+{
+  "timestamp": "2026-03-27T13:29:12.318Z",
+  "tag": "test-ddp2",
+  "meteor": {
+    "version": "release/METEOR@3.4-154-gdb1e00bbe3",
+    "sha": "db1e00bbe3"
+  },
+  "scenario": "ddp-reactive-light",
+  "app": "tasks-3.x",
+  "wall_clock_ms": 33459,
+  "metrics": {
+    "app_resources": {
+      "metric": "app_resources",
+      "name": "APP",
+      "pid": 151312,
+      "samples": 33,
+      "cpu": {
+        "avg": 73.08,
+        "max": 144,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 254.74,
+        "max_mb": 330.16,
+        "unit": "MB"
+      }
+    },
+    "db_resources": {
+      "metric": "db_resources",
+      "name": "DB",
+      "pid": 151215,
+      "samples": 34,
+      "cpu": {
+        "avg": 18.23,
+        "max": 28,
+        "unit": "percent"
+      },
+      "memory": {
+        "avg_mb": 153.03,
+        "max_mb": 156.62,
+        "unit": "MB"
+      }
+    },
+    "gc": {
+      "metric": "gc",
+      "unit": "ms",
+      "total_pause_ms": 606.7,
+      "count": 369,
+      "max_pause_ms": 9.17,
+      "avg_pause_ms": 1.64,
+      "minor": {
+        "count": 357,
+        "total_ms": 577.88
+      },
+      "major": {
+        "count": 6,
+        "total_ms": 25.37
+      },
+      "incremental": {
+        "count": 6,
+        "total_ms": 3.44
+      },
+      "weakcb": {
+        "count": 0,
+        "total_ms": 0
+      }
+    }
+  }
+}

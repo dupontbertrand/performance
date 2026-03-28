@@ -20,5 +20,9 @@
   },
   "volta": {
     "node": "20.16.0"
+  },
+  "dependencies": {
+    "simpleddp": "^2.2.4",
+    "ws": "^8.20.0"
   }
 }

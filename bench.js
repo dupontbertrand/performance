@@ -27,6 +27,18 @@ const { compare, toMarkdown } = require('./reporters/regression-detector');
 const args = minimist(process.argv.slice(2));
 const command = args._[0];
 
+// Parse --env KEY=VALUE flags into an object
+function parseEnvArgs() {
+  const envArgs = {};
+  const envList = Array.isArray(args.env) ? args.env : (args.env ? [args.env] : []);
+  for (const e of envList) {
+    const idx = e.indexOf('=');
+    if (idx > 0) envArgs[e.slice(0, idx)] = e.slice(idx + 1);
+  }
+  return envArgs;
+}
+const extraEnv = parseEnvArgs();
+
 function getMeteorCmd() {
   if (config.meteorCheckoutPath && fs.existsSync(path.join(config.meteorCheckoutPath, 'meteor'))) {
     return path.join(config.meteorCheckoutPath, 'meteor');
@@ -98,11 +110,24 @@ async function cmdRun() {
   console.log(`\n🔧 Benchmark: ${scenarioName}`);
   console.log(`   App: ${appName}`);
   console.log(`   Meteor: ${info.version} (${info.sha})`);
-  console.log(`   Tag: ${tag}\n`);
+  console.log(`   Tag: ${tag}`);
+  if (Object.keys(extraEnv).length > 0) {
+    console.log(`   Env: ${Object.entries(extraEnv).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+  }
+  console.log('');
+
+  if (scenario.driver === 'script') {
+    return cmdScript({ scenarioName, scenario, appName, app, tag, outputPath, info });
+  }
 
   if (scenario.driver === 'cli') {
+    if (scenarioName === 'cold-start') {
+      return cmdColdStart({ scenarioName, appName, app, tag, outputPath, info });
+    }
+    if (scenarioName === 'bundle-size') {
+      return cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info });
+    }
     console.log(`CLI scenario "${scenarioName}" — not yet implemented.`);
-    console.log('This will measure cold-start, hot-reload, or bundle-size.');
     process.exit(0);
   }
 
@@ -132,7 +157,7 @@ async function cmdRun() {
   const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
     cwd: app.path,
     env: {
-      ...process.env,
+      ...process.env, ...extraEnv,
       METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
       SERVER_NODE_OPTIONS: serverNodeOptions,
       GC_MONITOR_OUTPUT: gcOutputPath,
@@ -246,6 +271,291 @@ async function cmdRun() {
     if (r.cpu) console.log(`${r.name} CPU: avg ${r.cpu.avg}% max ${r.cpu.max}%`);
     if (r.memory) console.log(`${r.name} RAM: avg ${r.memory.avg_mb}MB max ${r.memory.max_mb}MB`);
   }
+}
+
+async function cmdScript({ scenarioName, scenario, appName, app, tag, outputPath, info }) {
+  const meteorCmd = getMeteorCmd();
+
+  // Install app npm deps if needed
+  const nodeModulesPath = path.join(app.path, 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    console.log('Installing app npm dependencies...');
+    execSync('npm install', { cwd: app.path, stdio: 'inherit' });
+  }
+
+  // Clean and start Meteor app
+  console.log('Cleaning app state...');
+  execSync(`${meteorCmd} reset`, { cwd: app.path, stdio: 'inherit' });
+
+  // GC monitor
+  const gcMonitorPath = path.resolve(__dirname, 'collectors/gc-monitor.js');
+  const resultsDir = path.resolve(__dirname, 'results');
+  if (!fs.existsSync(resultsDir)) fs.mkdirSync(resultsDir, { recursive: true });
+  const gcOutputPath = path.join(resultsDir, `gc-${tag}-${Date.now()}.json`);
+
+  console.log('Starting Meteor app...');
+  const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
+    cwd: app.path,
+    env: {
+      ...process.env, ...extraEnv,
+      METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
+      SERVER_NODE_OPTIONS: `--require ${gcMonitorPath}`,
+      GC_MONITOR_OUTPUT: gcOutputPath,
+      METEOR_NO_DEPRECATION: 'true',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  meteorProc.stdout.on('data', (d) => process.stderr.write(d));
+  meteorProc.stderr.on('data', (d) => process.stderr.write(d));
+
+  console.log('Waiting for app to start...');
+  waitForApp(config.appPort);
+  console.log('App started.');
+
+  // Start process collectors
+  const collectorProcs = [];
+  const collectorResults = [];
+
+  const appPid = getPid(`${appName}/.meteor/local/build/main.js`);
+  if (appPid) {
+    const proc = spawn('node', [path.resolve(__dirname, 'collectors/process-monitor.js'), appPid, 'APP'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    proc.stderr.on('data', (d) => process.stderr.write(d));
+    let stdout = '';
+    proc.stdout.on('data', (d) => { stdout += d; });
+    collectorProcs.push({ proc, getResult: () => stdout });
+  }
+
+  const dbPid = getPid(`${appName}/.meteor/local/db`);
+  if (dbPid) {
+    const proc = spawn('node', [path.resolve(__dirname, 'collectors/process-monitor.js'), dbPid, 'DB'], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    proc.stderr.on('data', (d) => process.stderr.write(d));
+    let stdout = '';
+    proc.stdout.on('data', (d) => { stdout += d; });
+    collectorProcs.push({ proc, getResult: () => stdout });
+  }
+
+  // Run the benchmark script
+  const scriptPath = path.resolve(__dirname, scenario.script);
+  const scriptArgs = scenario.args || '';
+  console.log(`\nRunning: node ${scenario.script} ${scriptArgs}\n`);
+
+  const artilleryStart = Date.now();
+  let scriptOutput = '';
+  try {
+    scriptOutput = execSync(`node "${scriptPath}" ${scriptArgs}`, {
+      cwd: __dirname,
+      encoding: 'utf8',
+      env: { ...process.env },
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 300000,
+    });
+  } catch (err) {
+    console.error('Script failed:', err.stderr || err.message);
+    scriptOutput = err.stdout || '';
+  }
+  const wallClockMs = Date.now() - artilleryStart;
+
+  // Parse script JSON output
+  let scriptMetrics = {};
+  const jsonLine = scriptOutput.trim().split('\n').pop();
+  if (jsonLine) {
+    try { scriptMetrics = JSON.parse(jsonLine); } catch {}
+  }
+
+  // Stop collectors
+  for (const { proc, getResult } of collectorProcs) {
+    proc.kill('SIGTERM');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    const raw = getResult().trim();
+    if (raw) {
+      try { collectorResults.push(JSON.parse(raw)); } catch {}
+    }
+  }
+
+  // Stop Meteor
+  meteorProc.kill('SIGTERM');
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
+  // Collect GC metrics
+  if (fs.existsSync(gcOutputPath)) {
+    try {
+      const gcData = JSON.parse(fs.readFileSync(gcOutputPath, 'utf8'));
+      collectorResults.push(gcData);
+      console.log(`GC: ${gcData.count} collections, ${gcData.total_pause_ms}ms total pause`);
+      fs.unlinkSync(gcOutputPath);
+    } catch {}
+  }
+
+  // Add script metrics as a collector result
+  collectorResults.push({ metric: 'fanout', ...scriptMetrics });
+
+  const result = buildResult({
+    scenario: scenarioName,
+    app: appName,
+    tag,
+    meteorCheckoutPath: config.meteorCheckoutPath,
+    collectorResults,
+    wallClockMs,
+  });
+
+  writeResult(result, outputPath);
+  appendToHistory(result, config.results.history);
+  console.log(`\nResults written to: ${outputPath}`);
+  console.log(`Wall clock: ${(wallClockMs / 1000).toFixed(1)}s`);
+
+  if (scriptMetrics.fanout_avg_ms) {
+    console.log(`Fanout: avg=${scriptMetrics.fanout_avg_ms}ms p50=${scriptMetrics.fanout_p50_ms}ms p95=${scriptMetrics.fanout_p95_ms}ms max=${scriptMetrics.fanout_max_ms}ms`);
+  }
+
+  for (const r of collectorResults) {
+    if (r.cpu) console.log(`${r.name} CPU: avg ${r.cpu.avg}% max ${r.cpu.max}%`);
+    if (r.memory) console.log(`${r.name} RAM: avg ${r.memory.avg_mb}MB max ${r.memory.max_mb}MB`);
+  }
+}
+
+async function cmdColdStart({ scenarioName, appName, app, tag, outputPath, info }) {
+  const meteorCmd = getMeteorCmd();
+  const runs = parseInt(args.runs || '3', 10);
+  const startupTimes = [];
+
+  console.log(`\nCold-start benchmark: ${runs} runs\n`);
+
+  for (let i = 0; i < runs; i++) {
+    console.log(`--- Run ${i + 1}/${runs} ---`);
+
+    // Clean state
+    execSync(`${meteorCmd} reset`, { cwd: app.path, stdio: 'inherit' });
+
+    // Start Meteor
+    const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
+      cwd: app.path,
+      env: {
+        ...process.env, ...extraEnv,
+        METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
+        METEOR_NO_DEPRECATION: 'true',
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    meteorProc.stdout.on('data', (d) => process.stderr.write(d));
+    meteorProc.stderr.on('data', (d) => process.stderr.write(d));
+
+    const startTime = Date.now();
+    waitForApp(config.appPort);
+    const startupMs = Date.now() - startTime;
+    startupTimes.push(startupMs);
+    console.log(`Startup: ${(startupMs / 1000).toFixed(1)}s`);
+
+    // Stop Meteor
+    meteorProc.kill('SIGTERM');
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  // Sort and take median
+  startupTimes.sort((a, b) => a - b);
+  const median = startupTimes[Math.floor(startupTimes.length / 2)];
+  const min = startupTimes[0];
+  const max = startupTimes[startupTimes.length - 1];
+
+  console.log(`\nResults: median=${(median / 1000).toFixed(1)}s min=${(min / 1000).toFixed(1)}s max=${(max / 1000).toFixed(1)}s`);
+
+  const result = buildResult({
+    scenario: scenarioName,
+    app: appName,
+    tag,
+    meteorCheckoutPath: config.meteorCheckoutPath,
+    collectorResults: [{
+      metric: 'cold_start',
+      startup_median_ms: median,
+      startup_min_ms: min,
+      startup_max_ms: max,
+      runs: startupTimes,
+    }],
+    wallClockMs: median,
+  });
+
+  writeResult(result, outputPath);
+  appendToHistory(result, config.results.history);
+  console.log(`Results written to: ${outputPath}`);
+}
+
+async function cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info }) {
+  const meteorCmd = getMeteorCmd();
+  const buildDir = path.join('/tmp', `meteor-bundle-${Date.now()}`);
+
+  console.log(`\nBundle size benchmark\n`);
+
+  // Install deps if needed
+  const nodeModulesPath = path.join(app.path, 'node_modules');
+  if (!fs.existsSync(nodeModulesPath)) {
+    console.log('Installing app npm dependencies...');
+    execSync('npm install', { cwd: app.path, stdio: 'inherit' });
+  }
+
+  // Build
+  console.log('Building production bundle...');
+  const buildStart = Date.now();
+  execSync(`${meteorCmd} build ${buildDir} --directory`, {
+    cwd: app.path,
+    stdio: 'inherit',
+    env: {
+      ...process.env, ...extraEnv,
+      METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
+    },
+  });
+  const buildTimeMs = Date.now() - buildStart;
+  console.log(`Build time: ${(buildTimeMs / 1000).toFixed(1)}s`);
+
+  // Measure client bundle size
+  const webBrowserDir = path.join(buildDir, 'bundle', 'programs', 'web.browser');
+  let clientSizeKb = 0;
+  if (fs.existsSync(webBrowserDir)) {
+    const jsFiles = fs.readdirSync(webBrowserDir).filter(f => f.endsWith('.js'));
+    for (const f of jsFiles) {
+      clientSizeKb += fs.statSync(path.join(webBrowserDir, f)).size / 1024;
+    }
+  }
+
+  // Measure server bundle size
+  const serverDir = path.join(buildDir, 'bundle', 'programs', 'server');
+  let serverSizeKb = 0;
+  if (fs.existsSync(serverDir)) {
+    const du = execSync(`du -sk "${serverDir}"`, { encoding: 'utf8' }).trim();
+    serverSizeKb = parseInt(du.split('\t')[0], 10);
+  }
+
+  // Total bundle
+  const totalDu = execSync(`du -sk "${path.join(buildDir, 'bundle')}"`, { encoding: 'utf8' }).trim();
+  const totalSizeKb = parseInt(totalDu.split('\t')[0], 10);
+
+  console.log(`Client JS: ${clientSizeKb.toFixed(0)} KB`);
+  console.log(`Server: ${serverSizeKb} KB`);
+  console.log(`Total bundle: ${totalSizeKb} KB`);
+
+  // Cleanup
+  execSync(`rm -rf "${buildDir}"`);
+
+  const result = buildResult({
+    scenario: scenarioName,
+    app: appName,
+    tag,
+    meteorCheckoutPath: config.meteorCheckoutPath,
+    collectorResults: [{
+      metric: 'bundle_size',
+      client_js_kb: Math.round(clientSizeKb),
+      server_kb: serverSizeKb,
+      total_kb: totalSizeKb,
+      build_time_ms: buildTimeMs,
+    }],
+    wallClockMs: buildTimeMs,
+  });
+
+  writeResult(result, outputPath);
+  appendToHistory(result, config.results.history);
+  console.log(`Results written to: ${outputPath}`);
 }
 
 function cmdCompare() {

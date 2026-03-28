@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-03-27T23:47:05.916Z",
+  "tag": "test-bundle",
+  "meteor": {
+    "version": "release/METEOR@3.4-154-gdb1e00bbe3",
+    "sha": "db1e00bbe3"
+  },
+  "scenario": "bundle-size",
+  "app": "tasks-3.x",
+  "wall_clock_ms": 14058,
+  "metrics": {
+    "bundle_size": {
+      "metric": "bundle_size",
+      "client_js_kb": 447,
+      "server_kb": 91128,
+      "total_kb": 92396,
+      "build_time_ms": 14058
+    }
+  }
+}
