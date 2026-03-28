@@ -230,9 +230,14 @@ async function cmdRun() {
     }
   }
 
-  // Stop Meteor (SIGTERM triggers gc-monitor output)
+  // Stop Meteor (SIGTERM triggers gc-monitor output, SIGKILL as fallback)
   meteorProc.kill('SIGTERM');
-  await new Promise((resolve) => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  if (!meteorProc.killed) {
+    console.log('⚠ Meteor did not exit after SIGTERM, sending SIGKILL...');
+    meteorProc.kill('SIGKILL');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
 
   // Collect GC metrics from output file
   if (fs.existsSync(gcOutputPath)) {
