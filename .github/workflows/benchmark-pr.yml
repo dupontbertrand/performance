@@ -34,7 +34,7 @@ env:
 jobs:
   benchmark:
     runs-on: ubuntu-latest  # TODO: switch to self-hosted for stable results
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout performance repo
