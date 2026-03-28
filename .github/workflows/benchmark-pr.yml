@@ -76,8 +76,9 @@ jobs:
           git fetch --tags --depth 50 origin ${{ steps.params.outputs.baseline }} ${{ steps.params.outputs.branch }}
 
       - name: Install app dependencies
-        run: npm install
-        working-directory: apps/tasks-3.x
+        run: |
+          npm install --prefix apps/tasks-3.x
+          npm install --prefix apps/tasks-2.x
 
       # ─── Run baseline benchmark ───
       - name: Checkout baseline
@@ -86,11 +87,22 @@ jobs:
           git fetch origin ${{ steps.params.outputs.baseline }}
           git checkout ${{ steps.params.outputs.baseline }}
 
+      - name: Detect baseline app
+        id: baseline_app
+        run: |
+          BRANCH="${{ steps.params.outputs.baseline }}"
+          if [[ "$BRANCH" == release-2* ]] || [[ "$BRANCH" == release/2* ]]; then
+            echo "app=tasks-2.x" >> $GITHUB_OUTPUT
+          else
+            echo "app=tasks-3.x" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run baseline benchmark
         run: |
           METEOR_CHECKOUT_PATH=$METEOR_REPO \
           node bench.js run \
             --scenario ${{ steps.params.outputs.scenario }} \
+            --app ${{ steps.baseline_app.outputs.app }} \
             --tag ${{ steps.params.outputs.baseline }} \
             --output results/baseline.json
 
@@ -101,11 +113,22 @@ jobs:
           git fetch origin ${{ steps.params.outputs.branch }}
           git checkout ${{ steps.params.outputs.branch }}
 
+      - name: Detect target app
+        id: target_app
+        run: |
+          BRANCH="${{ steps.params.outputs.branch }}"
+          if [[ "$BRANCH" == release-2* ]] || [[ "$BRANCH" == release/2* ]]; then
+            echo "app=tasks-2.x" >> $GITHUB_OUTPUT
+          else
+            echo "app=tasks-3.x" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run target benchmark
         run: |
           METEOR_CHECKOUT_PATH=$METEOR_REPO \
           node bench.js run \
             --scenario ${{ steps.params.outputs.scenario }} \
+            --app ${{ steps.target_app.outputs.app }} \
             --tag ${{ steps.params.outputs.branch }} \
             --output results/target.json
 
