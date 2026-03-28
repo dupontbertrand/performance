@@ -127,8 +127,8 @@ async function cmdRun() {
     if (scenarioName === 'bundle-size') {
       return cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info });
     }
-    console.log(`CLI scenario "${scenarioName}" — not yet implemented.`);
-    process.exit(0);
+    console.error(`✗ CLI scenario "${scenarioName}" — not yet implemented.`);
+    process.exit(1);
   }
 
   // Install app npm deps if needed
@@ -629,6 +629,11 @@ async function cmdPush() {
 
   if (!resultPath) {
     console.error('Usage: node bench.js push --result <file.json> [--url <ws-url>] [--key <api-key>]');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(resultPath)) {
+    console.error(`✗ Result file not found: ${resultPath}`);
     process.exit(1);
   }
 
