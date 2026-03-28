@@ -1,4 +1,5 @@
 name: PR Benchmark
+run-name: "${{ inputs.baseline || 'base' }} vs ${{ inputs.branch || 'target' }} — ${{ inputs.scenario || 'reactive-light' }}"
 
 # Triggers:
 # 1. Manual — from GitHub UI or dashboard (workflow_dispatch)

@@ -1,4 +1,5 @@
 name: Transport Benchmark
+run-name: "transport — ${{ inputs.branch }} — ${{ inputs.scenario }}"
 
 on:
   workflow_dispatch:

@@ -1,4 +1,5 @@
 name: Nightly Benchmark
+run-name: "nightly — ${{ inputs.branch || 'devel' }}"
 
 on:
   schedule:
