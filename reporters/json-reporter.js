@@ -84,4 +84,45 @@ function appendToHistory(result, historyDir) {
   writeResult(result, path.join(historyDir, filename));
 }
 
-module.exports = { buildResult, writeResult, appendToHistory };
+/**
+ * Validate a result object. Returns { valid, warnings, errors }.
+ * Errors = must not push. Warnings = push but flag.
+ */
+function validateResult(result) {
+  const errors = [];
+  const warnings = [];
+
+  // Required fields
+  if (!result.tag) errors.push('Missing tag');
+  if (!result.scenario) errors.push('Missing scenario');
+  if (!result.wall_clock_ms && result.wall_clock_ms !== 0) errors.push('Missing wall_clock_ms');
+
+  // No metrics at all = something went very wrong
+  if (!result.metrics || Object.keys(result.metrics).length === 0) {
+    errors.push('No metrics collected — app may have crashed');
+  }
+
+  // Artillery/script scenarios: check for app resource metrics
+  const hasAppResources = !!result.metrics?.app_resources;
+  const hasGc = !!result.metrics?.gc;
+  if (!hasAppResources && !['cold_start', 'bundle_size'].includes(result.metrics && Object.keys(result.metrics)[0])) {
+    warnings.push('No app resource metrics (CPU/RAM) — collector may have failed');
+  }
+  if (!hasGc && hasAppResources) {
+    warnings.push('No GC metrics — GC monitor may not have been injected');
+  }
+
+  // Wall clock sanity: if exactly at a round timeout boundary, likely a timeout
+  const wallSec = result.wall_clock_ms / 1000;
+  const commonTimeouts = [60, 120, 180, 300, 600];
+  for (const t of commonTimeouts) {
+    if (Math.abs(wallSec - t) < 2) {
+      warnings.push(`Wall clock ${wallSec.toFixed(1)}s is suspiciously close to ${t}s timeout`);
+      break;
+    }
+  }
+
+  return { valid: errors.length === 0, warnings, errors };
+}
+
+module.exports = { buildResult, writeResult, appendToHistory, validateResult };

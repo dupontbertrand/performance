@@ -151,7 +151,7 @@ jobs:
           fi
 
       - name: Push results to dashboard
-        if: env.BENCH_API_KEY != ''
+        if: success() && env.BENCH_API_KEY != ''
         timeout-minutes: 8
         run: |
           # Wake up Galaxy free tier (cold start can take up to 5 min)
@@ -162,8 +162,8 @@ jobs:
             echo "Waiting for dashboard cold start... ($i/30)"
             sleep 10
           done
-          node bench.js push --result results/baseline.json || true
-          node bench.js push --result results/target.json || true
+          node bench.js push --result results/baseline.json
+          node bench.js push --result results/target.json
 
       - name: Comment on PR
         if: steps.params.outputs.pr_number != ''
@@ -203,6 +203,7 @@ jobs:
             }
 
       - name: Upload results as artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results

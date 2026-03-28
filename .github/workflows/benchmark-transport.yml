@@ -55,6 +55,7 @@ jobs:
         working-directory: apps/tasks-3.x
 
       - name: Run benchmark (${{ matrix.transport }})
+        id: bench
         run: |
           METEOR_CHECKOUT_PATH=$METEOR_REPO \
           node bench.js run \
@@ -64,7 +65,7 @@ jobs:
             --output results/${{ matrix.transport }}.json
 
       - name: Push results to dashboard
-        if: env.BENCH_API_KEY != ''
+        if: success() && env.BENCH_API_KEY != ''
         timeout-minutes: 8
         run: |
           for i in $(seq 1 30); do
@@ -74,9 +75,10 @@ jobs:
             echo "Waiting for dashboard cold start... ($i/30)"
             sleep 10
           done
-          node bench.js push --result results/${{ matrix.transport }}.json || true
+          node bench.js push --result results/${{ matrix.transport }}.json
 
       - name: Upload results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: transport-${{ matrix.transport }}-${{ inputs.scenario }}

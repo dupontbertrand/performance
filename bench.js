@@ -21,7 +21,7 @@ const path = require('path');
 const fs = require('fs');
 const minimist = require('minimist');
 const config = require('./bench.config');
-const { buildResult, writeResult, appendToHistory } = require('./reporters/json-reporter');
+const { buildResult, writeResult, appendToHistory, validateResult } = require('./reporters/json-reporter');
 const { compare, toMarkdown } = require('./reporters/regression-detector');
 
 const args = minimist(process.argv.slice(2));
@@ -206,6 +206,7 @@ async function cmdRun() {
   // Run Artillery
   console.log(`\nRunning Artillery: ${scenario.config}...`);
   const artilleryStart = Date.now();
+  let artilleryFailed = false;
   try {
     execSync(`npx artillery run "${path.resolve(__dirname, scenario.config)}"`, {
       cwd: __dirname,
@@ -213,7 +214,8 @@ async function cmdRun() {
       env: { ...process.env },
     });
   } catch (err) {
-    console.error('Artillery failed:', err.message);
+    console.error('⚠ Artillery failed:', err.message);
+    artilleryFailed = true;
   }
   const wallClockMs = Date.now() - artilleryStart;
 
@@ -264,6 +266,28 @@ async function cmdRun() {
     configFlags: config.configFlags,
   });
 
+  if (artilleryFailed) {
+    result._artilleryFailed = true;
+  }
+
+  // Validate
+  const validation = validateResult(result);
+  if (validation.warnings.length > 0) {
+    console.log('\n⚠ Warnings:');
+    for (const w of validation.warnings) console.log(`  - ${w}`);
+    result._warnings = validation.warnings;
+  }
+  if (!validation.valid) {
+    console.error('\n✗ Result INVALID — will not be pushed to dashboard:');
+    for (const e of validation.errors) console.error(`  - ${e}`);
+    result._invalid = true;
+    result._errors = validation.errors;
+  }
+  if (artilleryFailed && validation.valid) {
+    console.log('\n⚠ Artillery failed but metrics were collected. Result marked as degraded.');
+    result._degraded = true;
+  }
+
   writeResult(result, outputPath);
   appendToHistory(result, config.results.history);
   console.log(`\nResults written to: ${outputPath}`);
@@ -272,6 +296,10 @@ async function cmdRun() {
   for (const r of collectorResults) {
     if (r.cpu) console.log(`${r.name} CPU: avg ${r.cpu.avg}% max ${r.cpu.max}%`);
     if (r.memory) console.log(`${r.name} RAM: avg ${r.memory.avg_mb}MB max ${r.memory.max_mb}MB`);
+  }
+
+  if (!validation.valid) {
+    process.exit(1);
   }
 }
 
@@ -600,6 +628,24 @@ async function cmdPush() {
   }
 
   const result = JSON.parse(fs.readFileSync(resultPath, 'utf8'));
+
+  // Block push of invalid results
+  if (result._invalid) {
+    console.error(`✗ Refusing to push invalid result: ${(result._errors || []).join(', ')}`);
+    process.exit(1);
+  }
+
+  const validation = validateResult(result);
+  if (!validation.valid) {
+    console.error(`✗ Refusing to push — validation failed:`);
+    for (const e of validation.errors) console.error(`  - ${e}`);
+    process.exit(1);
+  }
+  if (validation.warnings.length > 0) {
+    console.log('⚠ Pushing with warnings:');
+    for (const w of validation.warnings) console.log(`  - ${w}`);
+  }
+
   console.log(`Pushing ${resultPath} to ${url}...`);
 
   const SimpleDDP = require('simpleddp');
