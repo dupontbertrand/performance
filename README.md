@@ -2,15 +2,15 @@
 
 Automated benchmark framework for detecting performance regressions across Meteor releases.
 
-**Live Dashboard**: [meteor-benchmark.meteorapp.com](https://meteor-benchmark.meteorapp.com)
+**Live Dashboard**: [meteor-benchmark-dashboard.sandbox.galaxycloud.app](https://meteor-benchmark-dashboard.sandbox.galaxycloud.app)
 
 ## What it does
 
-- Benchmarks Meteor apps under load (Artillery + Playwright)
+- Benchmarks Meteor apps under load (Artillery + Playwright + DDP-raw)
 - Collects CPU, RAM, and GC metrics from the Meteor process
 - Compares two branches/releases and detects regressions
 - Pushes results to a live Blaze dashboard on Galaxy
-- Runs automatically via GitHub Actions (PR checks + nightly)
+- Runs automatically via GitHub Actions (PR checks, nightly, transport comparison)
 
 ## Quick start
 
@@ -36,25 +36,6 @@ node bench.js compare --baseline results/a.json --target results/b.json
 node bench.js list
 ```
 
-## Comparing branches
-
-```bash
-# Checkout baseline
-cd /path/to/meteor && git checkout release-3.5
-cd /path/to/performance
-METEOR_CHECKOUT_PATH=/path/to/meteor \
-  node bench.js run --scenario reactive-light --tag release-3.5 --output results/baseline.json
-
-# Checkout target
-cd /path/to/meteor && git checkout devel
-cd /path/to/performance
-METEOR_CHECKOUT_PATH=/path/to/meteor \
-  node bench.js run --scenario reactive-light --tag devel --output results/target.json
-
-# Compare
-node bench.js compare --baseline results/baseline.json --target results/target.json
-```
-
 ## CLI commands
 
 | Command | Description |
@@ -70,16 +51,55 @@ node bench.js compare --baseline results/baseline.json --target results/target.j
 |------|-------------|---------|
 | `--scenario` | Scenario to run | `reactive-light` |
 | `--tag` | Label for this run (branch name, version) | required |
-| `--output` | Output JSON file path | `results/<scenario>-<tag>-<timestamp>.json` |
+| `--output` | Output JSON file path | auto-generated |
 | `--app` | App directory to benchmark | `tasks-3.x` |
+| `--env` | Environment variable for Meteor process (e.g. `DDP_TRANSPORT=uws`) | none |
+| `--runs` | Number of runs for cold-start (takes median) | `3` |
 
 ## Scenarios
 
+### Reactive pub/sub (browser)
+
 | Scenario | VUs | Duration | What it tests |
 |----------|-----|----------|---------------|
-| `reactive-light` | 30 | ~2 min | Reactive pub/sub CRUD (light load) |
-| `reactive-crud` | 240 | ~5 min | Reactive pub/sub CRUD (heavy load) |
-| `non-reactive-crud` | 240 | ~5 min | Methods-only CRUD (no reactivity) |
+| `reactive-light` | 30 browsers | ~2 min | Full-stack reactive CRUD (light load) |
+| `reactive-crud` | 240 browsers | ~5 min | Full-stack reactive CRUD (heavy load) |
+| `non-reactive-crud` | 240 browsers | ~5 min | Methods-only CRUD (no reactivity) |
+
+### DDP server (no browser)
+
+| Scenario | VUs | Duration | What it tests |
+|----------|-----|----------|---------------|
+| `ddp-reactive-light` | 150 DDP clients | ~30s | Server-side DDP throughput with pub/sub |
+| `ddp-non-reactive-light` | 150 DDP clients | ~30s | Server-side methods-only throughput |
+
+### Reactive fanout
+
+| Scenario | Subscribers | Duration | What it tests |
+|----------|-------------|----------|---------------|
+| `fanout-light` | 50 | ~15s | Reactive propagation latency (1 writer → N subscribers) |
+| `fanout-heavy` | 200 | ~30s | Reactive propagation at scale |
+
+### Cold start / Build
+
+| Scenario | Duration | What it tests |
+|----------|----------|---------------|
+| `cold-start` | ~1 min | `meteor reset` → app running (median of 3 runs) |
+| `bundle-size` | ~30s | Client JS + server bundle size after `meteor build` |
+
+## Transport comparison
+
+Compare WebSocket transports on branches with pluggable transport support:
+
+```bash
+node bench.js run --scenario ddp-reactive-light --tag sockjs \
+  --env DDP_TRANSPORT=sockjs --output results/sockjs.json
+
+node bench.js run --scenario ddp-reactive-light --tag uws \
+  --env DDP_TRANSPORT=uws --output results/uws.json
+
+node bench.js compare --baseline results/sockjs.json --target results/uws.json
+```
 
 ## Metrics collected
 
@@ -93,12 +113,13 @@ node bench.js compare --baseline results/baseline.json --target results/target.j
 | GC max pause | perf_hooks | Longest single GC pause |
 | GC count | perf_hooks | Number of GC events |
 | GC major | perf_hooks | Full (mark-sweep-compact) GC time |
+| Fanout p50/p95/max | SimpleDDP | Reactive propagation latency |
+| Startup time | Timer | Cold start duration (median) |
+| Bundle size | du | Client JS + server bundle in KB |
 
 ## CI / GitHub Actions
 
 ### PR Benchmark (on demand)
-
-Triggered manually or via `repository_dispatch`. Compares a branch against a baseline:
 
 ```bash
 gh workflow run benchmark-pr.yml \
@@ -107,44 +128,59 @@ gh workflow run benchmark-pr.yml \
   -f scenario=reactive-light
 ```
 
-Results are pushed to the dashboard and posted as PR comments (when a PR number is provided).
+### Transport Benchmark (on demand)
+
+Runs the same scenario with `DDP_TRANSPORT=sockjs` and `DDP_TRANSPORT=uws` in parallel:
+
+```bash
+gh workflow run benchmark-transport.yml \
+  -f branch=release-3.5 \
+  -f scenario=ddp-reactive-light
+```
 
 ### Nightly Benchmark (cron)
 
-Runs every night at 3am UTC on `devel` vs the latest release branch. Results accumulate on the dashboard for trend analysis.
+Runs every night at 3am UTC on `devel` vs the latest release branch.
 
 ## Dashboard
 
-A Blaze app deployed on Galaxy that displays benchmark results:
+Deployed separately: [dupontbertrand/meteor-benchmark-dashboard](https://github.com/dupontbertrand/meteor-benchmark-dashboard)
 
-- **Dashboard** — Recent runs with status badges
-- **Compare** — Select two branches/tags and see the diff table
-- **Trends** — Line charts showing metric evolution over time
-
-Source: `apps/dashboard/`
+- **Release Health** — Diagnosis cockpit: verdict, fingerprint, top regressions/improvements
+- **Compare** — Side-by-side comparison with relative deltas
+- **Trends** — Historical charts with range filtering
+- **Scenario Detail** — Technical description per scenario
+- **About** — Methodology documentation
 
 ## Project structure
 
 ```
 bench.js                  CLI entry point
-bench.config.js           Thresholds, scenarios, config
+bench.config.js           Scenarios, thresholds, config
 collectors/
   process-monitor.js      CPU/RAM collector (pidusage)
   gc-monitor.js           GC collector (perf_hooks)
+  event-loop-monitor.js   Event loop delay histogram
 reporters/
   json-reporter.js        JSON output
   regression-detector.js  Comparison + regression detection
 artillery/
-  reactive-stress.yml         240 VUs (heavy)
-  reactive-stress-light.yml   30 VUs (light)
-  non-reactive-stress.yml     240 VUs, methods only
+  reactive-stress.yml         240 browser VUs
+  reactive-stress-light.yml   30 browser VUs
+  non-reactive-stress.yml     240 browser VUs, methods only
+  ddp-reactive-light.yml      150 DDP clients, reactive
+  ddp-non-reactive-light.yml  150 DDP clients, methods only
+tests/
+  test-helpers.js         Playwright test functions
+  ddp-helpers.js          SimpleDDP scenario functions
+  fanout-bench.js         Fanout latency benchmark
 apps/
   tasks-3.x/              Meteor 3 React benchmark app
   tasks-2.x/              Meteor 2 React benchmark app
-  dashboard/              Blaze dashboard (Galaxy)
 .github/workflows/
   benchmark-pr.yml        PR benchmark workflow
   benchmark-nightly.yml   Nightly benchmark workflow
+  benchmark-transport.yml Transport comparison workflow
 ```
 
 ## Requirements
