@@ -110,6 +110,8 @@ jobs:
       - name: Checkout target branch
         run: |
           cd $METEOR_REPO
+          git checkout -- .
+          git clean -fd
           git fetch origin ${{ steps.params.outputs.branch }}
           git checkout ${{ steps.params.outputs.branch }}
 
