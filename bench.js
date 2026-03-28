@@ -27,6 +27,18 @@ const { compare, toMarkdown } = require('./reporters/regression-detector');
 const args = minimist(process.argv.slice(2));
 const command = args._[0];
 
+// Parse --env KEY=VALUE flags into an object
+function parseEnvArgs() {
+  const envArgs = {};
+  const envList = Array.isArray(args.env) ? args.env : (args.env ? [args.env] : []);
+  for (const e of envList) {
+    const idx = e.indexOf('=');
+    if (idx > 0) envArgs[e.slice(0, idx)] = e.slice(idx + 1);
+  }
+  return envArgs;
+}
+const extraEnv = parseEnvArgs();
+
 function getMeteorCmd() {
   if (config.meteorCheckoutPath && fs.existsSync(path.join(config.meteorCheckoutPath, 'meteor'))) {
     return path.join(config.meteorCheckoutPath, 'meteor');
@@ -98,7 +110,11 @@ async function cmdRun() {
   console.log(`\n🔧 Benchmark: ${scenarioName}`);
   console.log(`   App: ${appName}`);
   console.log(`   Meteor: ${info.version} (${info.sha})`);
-  console.log(`   Tag: ${tag}\n`);
+  console.log(`   Tag: ${tag}`);
+  if (Object.keys(extraEnv).length > 0) {
+    console.log(`   Env: ${Object.entries(extraEnv).map(([k, v]) => `${k}=${v}`).join(', ')}`);
+  }
+  console.log('');
 
   if (scenario.driver === 'script') {
     return cmdScript({ scenarioName, scenario, appName, app, tag, outputPath, info });
@@ -141,7 +157,7 @@ async function cmdRun() {
   const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
     cwd: app.path,
     env: {
-      ...process.env,
+      ...process.env, ...extraEnv,
       METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
       SERVER_NODE_OPTIONS: serverNodeOptions,
       GC_MONITOR_OUTPUT: gcOutputPath,
@@ -281,7 +297,7 @@ async function cmdScript({ scenarioName, scenario, appName, app, tag, outputPath
   const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
     cwd: app.path,
     env: {
-      ...process.env,
+      ...process.env, ...extraEnv,
       METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
       SERVER_NODE_OPTIONS: `--require ${gcMonitorPath}`,
       GC_MONITOR_OUTPUT: gcOutputPath,
@@ -418,7 +434,7 @@ async function cmdColdStart({ scenarioName, appName, app, tag, outputPath, info 
     const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
       cwd: app.path,
       env: {
-        ...process.env,
+        ...process.env, ...extraEnv,
         METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
         METEOR_NO_DEPRECATION: 'true',
       },
@@ -486,7 +502,7 @@ async function cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info
     cwd: app.path,
     stdio: 'inherit',
     env: {
-      ...process.env,
+      ...process.env, ...extraEnv,
       METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
     },
   });
