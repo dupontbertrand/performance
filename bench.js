@@ -127,6 +127,9 @@ async function cmdRun() {
     if (scenarioName === 'bundle-size') {
       return cmdBundleSize({ scenarioName, appName, app, tag, outputPath, info });
     }
+    if (scenarioName === 'hot-reload') {
+      return cmdHotReload({ scenarioName, appName, app, tag, outputPath, info });
+    }
     console.error(`✗ CLI scenario "${scenarioName}" — not yet implemented.`);
     process.exit(1);
   }
@@ -510,6 +513,119 @@ async function cmdColdStart({ scenarioName, appName, app, tag, outputPath, info 
       startup_min_ms: min,
       startup_max_ms: max,
       runs: startupTimes,
+    }],
+    wallClockMs: median,
+    extraEnv,
+    configFlags: config.configFlags,
+  });
+
+  writeResult(result, outputPath);
+  appendToHistory(result, config.results.history);
+  console.log(`Results written to: ${outputPath}`);
+}
+
+async function cmdHotReload({ scenarioName, appName, app, tag, outputPath, info }) {
+  const meteorCmd = getMeteorCmd();
+  const runs = parseInt(args.runs || '3', 10);
+  const reloadTimes = [];
+
+  console.log(`\nHot-reload benchmark: ${runs} runs\n`);
+
+  // Clean and start app once
+  execSync(`${meteorCmd} reset`, { cwd: app.path, stdio: 'inherit' });
+
+  const meteorProc = spawn(meteorCmd, ['run', '--port', String(config.appPort)], {
+    cwd: app.path,
+    env: {
+      ...process.env, ...extraEnv,
+      METEOR_PACKAGE_DIRS: path.resolve(__dirname, 'packages'),
+      METEOR_NO_DEPRECATION: 'true',
+    },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  // Watch stdout for "Client modified" or "Server modified" to detect rebuild
+  let rebuildResolve = null;
+  const onData = (d) => {
+    const text = d.toString();
+    process.stderr.write(d);
+    if (rebuildResolve && (text.includes('Client modified') || text.includes('Server modified') || text.includes('client refresh'))) {
+      rebuildResolve();
+      rebuildResolve = null;
+    }
+  };
+  meteorProc.stdout.on('data', onData);
+  meteorProc.stderr.on('data', onData);
+
+  console.log('Waiting for initial app start...');
+  waitForApp(config.appPort);
+  console.log('App started. Running hot-reload measurements...\n');
+
+  // Find a file to touch
+  const touchTarget = path.join(app.path, 'client', 'main.jsx') ||
+    path.join(app.path, 'client', 'main.js');
+
+  for (let i = 0; i < runs; i++) {
+    console.log(`--- Reload ${i + 1}/${runs} ---`);
+
+    // Wait for rebuild by watching Meteor output
+    const rebuildPromise = new Promise((resolve) => {
+      rebuildResolve = resolve;
+      // Timeout fallback: wait for app to respond again
+      setTimeout(() => {
+        if (rebuildResolve) {
+          rebuildResolve = null;
+          resolve();
+        }
+      }, 60000);
+    });
+
+    // Touch the file to trigger rebuild
+    const startTime = Date.now();
+    const content = fs.readFileSync(touchTarget, 'utf8');
+    fs.writeFileSync(touchTarget, content + `\n// hot-reload bench ${Date.now()}`);
+
+    await rebuildPromise;
+
+    // Also verify app is responding
+    try { waitForApp(config.appPort, 30); } catch {}
+
+    const reloadMs = Date.now() - startTime;
+    reloadTimes.push(reloadMs);
+    console.log(`Reload: ${(reloadMs / 1000).toFixed(1)}s`);
+
+    // Restore file
+    fs.writeFileSync(touchTarget, content);
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  // Stop Meteor
+  meteorProc.kill('SIGTERM');
+  await new Promise((resolve) => setTimeout(resolve, 5000));
+  if (!meteorProc.killed) {
+    meteorProc.kill('SIGKILL');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  // Stats
+  reloadTimes.sort((a, b) => a - b);
+  const median = reloadTimes[Math.floor(reloadTimes.length / 2)];
+  const min = reloadTimes[0];
+  const max = reloadTimes[reloadTimes.length - 1];
+
+  console.log(`\nResults: median=${(median / 1000).toFixed(1)}s min=${(min / 1000).toFixed(1)}s max=${(max / 1000).toFixed(1)}s`);
+
+  const result = buildResult({
+    scenario: scenarioName,
+    app: appName,
+    tag,
+    meteorCheckoutPath: config.meteorCheckoutPath,
+    collectorResults: [{
+      metric: 'hot_reload',
+      reload_median_ms: median,
+      reload_min_ms: min,
+      reload_max_ms: max,
+      runs: reloadTimes,
     }],
     wallClockMs: median,
     extraEnv,
