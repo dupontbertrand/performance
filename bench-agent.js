@@ -92,7 +92,16 @@ function runBenchmark(scenario, tag) {
     cwd: __dirname,
     encoding: 'utf8',
     timeout: 2 * 60 * 60 * 1000,
-    env: { ...process.env, METEOR_ALLOW_SUPERUSER: '1' },
+    env: {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      METEOR_ALLOW_SUPERUSER: '1',
+      MONGO_URL: process.env.MONGO_URL,
+      MONGO_OPLOG_URL: process.env.MONGO_OPLOG_URL,
+      ROOT_URL: process.env.ROOT_URL,
+      PORT: process.env.PORT,
+      METEOR_CHECKOUT_PATH: process.env.METEOR_CHECKOUT_PATH,
+    },
   });
 
   if (result.error) {

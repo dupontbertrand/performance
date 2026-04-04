@@ -101,7 +101,11 @@ source /opt/bench/bench.env
 alias bench='cd /opt/bench/performance && node bench.js'
 BASHRC
 
-echo "=== [8/8] Bench agent service ==="
+echo "=== [8/8] Bench user + agent service ==="
+# Create unprivileged user for the agent
+useradd -r -m -d /opt/bench -s /bin/bash bench 2>/dev/null || true
+chown -R bench:bench /opt/bench
+chmod 600 /opt/bench/bench-agent.env
 cp /opt/bench/performance/bench-agent.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable bench-agent

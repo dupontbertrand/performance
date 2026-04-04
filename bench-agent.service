@@ -4,7 +4,7 @@ After=network.target mongod.service
 
 [Service]
 Type=simple
-User=root
+User=bench
 WorkingDirectory=/opt/bench/performance
 EnvironmentFile=/opt/bench/bench-agent.env
 ExecStart=/usr/bin/node /opt/bench/performance/bench-agent.js
