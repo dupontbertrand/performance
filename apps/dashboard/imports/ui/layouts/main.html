@@ -7,7 +7,16 @@
         <a class="nav-link {{activeIf 'compare'}}" href="/compare">Compare</a>
         <a class="nav-link {{activeIf 'trends'}}" href="/trends">Trends</a>
         <a class="nav-link {{activeIf 'about'}}" href="/about">About</a>
+        {{#if currentUser}}
+          <a class="nav-link {{activeIf 'admin'}}" href="/admin">Admin</a>
+        {{/if}}
       </div>
+    </div>
+    <div class="navbar-nav ms-auto">
+      {{#if currentUser}}
+        <span class="nav-link text-light">{{currentUser.username}}</span>
+        <a class="nav-link js-logout" href="#">Logout</a>
+      {{/if}}
     </div>
   </nav>
   <div class="container">

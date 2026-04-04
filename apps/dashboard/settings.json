@@ -1,3 +1,13 @@
 {
-  "benchApiKey": "dev-bench-key-change-in-prod"
+  "benchApiKey": "dev-bench-key-change-in-prod",
+  "adminUsername": "admin",
+  "adminPassword": "admin1234!",
+  "public": {
+    "scenarios": [
+      "reactive-crud", "reactive-light", "non-reactive-crud",
+      "ddp-reactive-light", "ddp-non-reactive-light",
+      "fanout-light", "fanout-heavy",
+      "cold-start", "hot-reload", "bundle-size"
+    ]
+  }
 }

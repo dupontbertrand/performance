@@ -1,0 +1,15 @@
+[Unit]
+Description=Meteor Bench Agent
+After=network.target mongod.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/bench/performance
+EnvironmentFile=/opt/bench/bench.env
+ExecStart=/usr/bin/node /opt/bench/performance/bench-agent.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

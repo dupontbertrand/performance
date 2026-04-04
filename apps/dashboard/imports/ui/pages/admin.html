@@ -1,0 +1,98 @@
+<template name="admin">
+  <h2>Benchmark Admin</h2>
+
+  <div class="row mb-4">
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">Launch a benchmark</div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="branch" class="form-label">Meteor branch</label>
+            <input type="text" class="form-control js-branch" id="branch"
+                   placeholder="devel" list="branch-suggestions" value="{{branch}}">
+            <datalist id="branch-suggestions">
+              <option value="devel">
+              <option value="release-3.5">
+              <option value="release-3.4">
+              <option value="release-3.4.1">
+            </datalist>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Scenarios</label>
+            <div class="mb-2">
+              <button class="btn btn-sm btn-outline-secondary js-select-all">Select All</button>
+              <button class="btn btn-sm btn-outline-secondary js-deselect-all">Deselect All</button>
+            </div>
+            {{#each scenarios}}
+              <div class="form-check">
+                <input class="form-check-input js-scenario-check" type="checkbox"
+                       value="{{this}}" id="scenario-{{this}}" checked="{{isSelected this}}">
+                <label class="form-check-label" for="scenario-{{this}}">{{this}}</label>
+              </div>
+            {{/each}}
+          </div>
+
+          {{#if error}}
+            <div class="alert alert-danger py-2">{{error}}</div>
+          {{/if}}
+          {{#if success}}
+            <div class="alert alert-success py-2">{{success}}</div>
+          {{/if}}
+
+          <button class="btn btn-primary js-launch" {{#if launching}}disabled{{/if}}>
+            {{#if launching}}Launching...{{else}}Launch{{/if}}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Job Queue</h3>
+
+  {{#if Template.subscriptionsReady}}
+    {{#if hasJobs}}
+      <div class="table-responsive">
+        <table class="table table-striped table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>Branch</th>
+              <th>Scenarios</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Started</th>
+              <th>Completed</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each jobs}}
+              <tr>
+                <td><code>{{branch}}</code></td>
+                <td>{{joinScenarios scenarios}}</td>
+                <td>{{{statusBadge status}}}</td>
+                <td>{{formatDate createdAt}}</td>
+                <td>{{formatDate startedAt}}</td>
+                <td>{{formatDate completedAt}}</td>
+                <td>
+                  {{#if isEq status "pending"}}
+                    <button class="btn btn-sm btn-outline-danger js-cancel" data-id="{{_id}}">Cancel</button>
+                  {{/if}}
+                  {{#if error}}
+                    <span class="text-danger" title="{{error}}">{{truncate error 40}}</span>
+                  {{/if}}
+                </td>
+              </tr>
+            {{/each}}
+          </tbody>
+        </table>
+      </div>
+    {{else}}
+      <p class="text-muted">No jobs yet.</p>
+    {{/if}}
+  {{else}}
+    <div class="text-center my-5">
+      <div class="spinner-border" role="status"></div>
+    </div>
+  {{/if}}
+</template>

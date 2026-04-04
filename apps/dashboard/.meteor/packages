@@ -27,3 +27,4 @@ blaze-hot               # Update files using Blaze's API with HMR
 rspack                  # Integrate Rspack into Meteor for client and server app bundling
 ostrio:flow-router-extra
 reactive-dict
+accounts-password

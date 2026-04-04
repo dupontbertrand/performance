@@ -101,6 +101,13 @@ source /opt/bench/bench.env
 alias bench='cd /opt/bench/performance && node bench.js'
 BASHRC
 
+echo "=== [8/8] Bench agent service ==="
+cp /opt/bench/performance/bench-agent.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable bench-agent
+# Don't start yet — BENCH_API_KEY must be set in bench.env first
+echo "Agent service installed (not started — set BENCH_API_KEY in /opt/bench/bench.env first)"
+
 echo ""
 echo "============================================"
 echo " DONE. Reboot or source /opt/bench/bench.env"

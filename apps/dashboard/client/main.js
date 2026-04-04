@@ -1,3 +1,4 @@
+import { Meteor } from 'meteor/meteor';
 import { FlowRouter } from 'meteor/ostrio:flow-router-extra';
 
 // Layouts
@@ -10,6 +11,8 @@ import '../imports/ui/pages/trends.js';
 import '../imports/ui/pages/detail.js';
 import '../imports/ui/pages/scenario.js';
 import '../imports/ui/pages/about.js';
+import '../imports/ui/pages/login.js';
+import '../imports/ui/pages/admin.js';
 
 // Routes
 FlowRouter.route('/', {
@@ -37,6 +40,23 @@ FlowRouter.route('/run/:id', {
   name: 'detail',
   action() {
     this.render('mainLayout', { content: 'detail' });
+  },
+});
+
+FlowRouter.route('/login', {
+  name: 'login',
+  action() {
+    this.render('mainLayout', { content: 'login' });
+  },
+});
+
+FlowRouter.route('/admin', {
+  name: 'admin',
+  triggersEnter: [function (context, redirect) {
+    if (!Meteor.userId()) redirect('/login');
+  }],
+  action() {
+    this.render('mainLayout', { content: 'admin' });
   },
 });
 
