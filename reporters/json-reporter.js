@@ -57,13 +57,14 @@ function buildResult({ scenario, app, tag, meteorCheckoutPath, collectorResults,
     nodeVersion: process.version,
   };
 
-  // Detect if running on a dedicated server (no desktop/GUI environment)
+  // Detect if running on a dedicated server (no desktop/GUI processes)
   try {
-    const sessionType = process.env.XDG_SESSION_TYPE || '';
-    const display = process.env.DISPLAY || '';
-    environment.dedicated = !sessionType && !display;
-  } catch {
+    // Check for actual running display servers, not env vars (SSH forwards those)
+    execSync('pgrep -x "Xorg|Xwayland|gnome-shell|plasmashell|gdm|sddm|lightdm" > /dev/null 2>&1', { encoding: 'utf8' });
     environment.dedicated = false;
+  } catch {
+    // pgrep returns non-zero = no GUI process found = dedicated server
+    environment.dedicated = true;
   }
 
   return {
