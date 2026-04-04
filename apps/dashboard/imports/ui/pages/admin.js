@@ -6,7 +6,7 @@ import './admin.html';
 
 Template.admin.onCreated(function () {
   this.subscribe('jobs.all');
-  this.branch = new ReactiveVar('devel');
+  this.selectedBranch = new ReactiveVar('devel');
   this.branches = new ReactiveVar(['devel', 'release-3.5', 'release-3.4']);
   this.selectedScenarios = new ReactiveVar(
     [...(Meteor.settings?.public?.scenarios || [])],
@@ -42,8 +42,8 @@ Template.admin.onRendered(function () {
 });
 
 Template.admin.helpers({
-  branch() {
-    return Template.instance().branch.get();
+  selectedBranch() {
+    return Template.instance().selectedBranch.get();
   },
   branches() {
     return Template.instance().branches.get();
@@ -127,7 +127,7 @@ Template.admin.helpers({
 
 Template.admin.events({
   'change .js-branch'(event, instance) {
-    instance.branch.set(event.target.value);
+    instance.selectedBranch.set(event.target.value);
   },
   'change .js-scenario-check'(event, instance) {
     const scenario = event.target.value;
@@ -152,7 +152,7 @@ Template.admin.events({
   },
   'click .js-launch'(event, instance) {
     event.preventDefault();
-    const branch = instance.branch.get().trim();
+    const branch = instance.selectedBranch.get().trim();
     const scenarios = instance.selectedScenarios.get();
 
     instance.error.set('');
