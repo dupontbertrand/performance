@@ -1,0 +1,157 @@
+<template name="about">
+  <h2>About This Dashboard</h2>
+
+  <div class="row mb-4">
+    <div class="col-lg-8">
+      <div class="card mb-3">
+        <div class="card-header">What Is This?</div>
+        <div class="card-body">
+          <p>
+            This dashboard tracks <strong>Meteor framework performance</strong> across versions,
+            branches, and configurations. It ingests results from an automated benchmark CLI
+            (<code>bench.js</code>) that runs reproducible scenarios against Meteor applications.
+          </p>
+          <p class="mb-0">
+            Results are pushed via DDP and stored in MongoDB. Each run captures CPU, RAM,
+            garbage collection metrics, and wall-clock time, along with full environment metadata.
+          </p>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">Confidence Levels</div>
+        <div class="card-body">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr>
+                <th>Badge</th>
+                <th>Meaning</th>
+                <th>Reliability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="badge bg-success">Dedicated</span></td>
+                <td>Run on an isolated server with no desktop environment, GUI, or user workload</td>
+                <td>High &mdash; minimal background noise, reproducible results</td>
+              </tr>
+              <tr>
+                <td><span class="badge bg-warning text-dark">Desktop</span></td>
+                <td>Run on a developer machine (IDE, browser, desktop environment running)</td>
+                <td>Lower &mdash; background processes can cause 10-20% variance between runs</td>
+              </tr>
+              <tr>
+                <td><span class="badge bg-secondary">?</span></td>
+                <td>No environment metadata (older run or missing collector)</td>
+                <td>Unknown</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">Dedicated Benchmark Server</div>
+        <div class="card-body">
+          <p>
+            Runs marked <span class="badge bg-success">Dedicated</span> are executed on an
+            isolated Hetzner Cloud server reserved exclusively for benchmarking.
+          </p>
+          <table class="table table-sm mb-0">
+            <tr><td>Provider</td><td>Hetzner Cloud</td></tr>
+            <tr><td>Type</td><td>CPX42 (AMD EPYC)</td></tr>
+            <tr><td>CPU</td><td>8 vCPU (dedicated)</td></tr>
+            <tr><td>RAM</td><td>16 GB</td></tr>
+            <tr><td>Storage</td><td>320 GB NVMe SSD</td></tr>
+            <tr><td>Location</td><td>Nuremberg, Germany</td></tr>
+            <tr><td>OS</td><td>Ubuntu 24.04 LTS</td></tr>
+            <tr><td>Node.js</td><td>v22.x (matches Meteor dev bundle)</td></tr>
+            <tr><td>MongoDB</td><td>7.0.x (matches Meteor dev bundle)</td></tr>
+          </table>
+          <p class="mt-2 mb-0 text-body-secondary">
+            No desktop environment, no GUI, no user sessions.
+            MongoDB runs locally with WiredTiger cache tuned to 6 GB.
+            Oplog tailing enabled via single-node replica set.
+          </p>
+        </div>
+      </div>
+
+      <div class="card mb-3">
+        <div class="card-header">Scenarios</div>
+        <div class="card-body">
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr><th>Scenario</th><th>Driver</th><th>What It Measures</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>reactive-light</code></td>
+                <td>Artillery + Playwright</td>
+                <td>30 browser sessions doing CRUD with pub/sub reactivity</td>
+              </tr>
+              <tr>
+                <td><code>reactive-crud</code></td>
+                <td>Artillery + Playwright</td>
+                <td>240 browser sessions, heavy reactive load</td>
+              </tr>
+              <tr>
+                <td><code>non-reactive-crud</code></td>
+                <td>Artillery + Playwright</td>
+                <td>240 browser sessions, methods only (no pub/sub)</td>
+              </tr>
+              <tr>
+                <td><code>ddp-reactive-light</code></td>
+                <td>Artillery + SimpleDDP</td>
+                <td>150 DDP connections with reactive subscriptions</td>
+              </tr>
+              <tr>
+                <td><code>ddp-non-reactive-light</code></td>
+                <td>Artillery + SimpleDDP</td>
+                <td>150 DDP connections, methods only</td>
+              </tr>
+              <tr>
+                <td><code>fanout-light</code></td>
+                <td>Script</td>
+                <td>50 subscribers, 1 writer &mdash; reactive propagation latency</td>
+              </tr>
+              <tr>
+                <td><code>fanout-heavy</code></td>
+                <td>Script</td>
+                <td>200 subscribers, 1 writer &mdash; reactive propagation latency</td>
+              </tr>
+              <tr>
+                <td><code>cold-start</code></td>
+                <td>CLI</td>
+                <td>Time to first HTTP 200 from clean state</td>
+              </tr>
+              <tr>
+                <td><code>hot-reload</code></td>
+                <td>CLI</td>
+                <td>Rebuild time after file change</td>
+              </tr>
+              <tr>
+                <td><code>bundle-size</code></td>
+                <td>CLI</td>
+                <td>Client + server bundle output size</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Methodology</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>Each scenario runs against a <code>meteor create --full</code> app (or the tasks app)</li>
+            <li>Metrics are sampled every second via <code>pidusage</code> for CPU/RAM</li>
+            <li>GC data is collected via Node.js <code>--expose-gc</code> and PerformanceObserver</li>
+            <li>MongoDB runs locally (no network latency) with oplog tailing enabled</li>
+            <li>Runs are sequential &mdash; only one benchmark at a time per server</li>
+            <li>Results are validated before push (schema check, wall-clock sanity, metric completeness)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

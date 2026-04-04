@@ -33,6 +33,14 @@ Template.dashboard.helpers({
   gcPause() {
     return this.metrics?.gc?.total_pause_ms?.toFixed(0) || '-';
   },
+  confidenceBadge() {
+    const env = this.environment;
+    if (!env) return '<span class="badge bg-secondary" title="No environment data">?</span>';
+    if (env.dedicated) {
+      return `<span class="badge bg-success" title="${env.cpuModel} — ${env.cpus} vCPU, ${(env.totalMemoryMb / 1024).toFixed(0)} GB RAM">Dedicated</span>`;
+    }
+    return '<span class="badge bg-warning text-dark" title="Run on a desktop/dev machine — results may vary">Desktop</span>';
+  },
   statusBadge() {
     // Simple status based on wall clock time — will be enhanced with baseline comparison
     const wc = this.wall_clock_ms;

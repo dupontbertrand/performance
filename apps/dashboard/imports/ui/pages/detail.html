@@ -72,6 +72,29 @@
           </div>
         </div>
       </div>
+      {{#if hasEnvironment}}
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <div class="card">
+            <div class="card-header">
+              Environment
+              {{{confidenceBadge}}}
+            </div>
+            <div class="card-body">
+              <table class="table table-sm mb-0">
+                <tr><td>Hostname</td><td>{{environment.hostname}}</td></tr>
+                <tr><td>Platform</td><td>{{environment.platform}}</td></tr>
+                <tr><td>CPU</td><td>{{environment.cpuModel}}</td></tr>
+                <tr><td>vCPUs</td><td>{{environment.cpus}}</td></tr>
+                <tr><td>RAM</td><td>{{envRamGb}} GB</td></tr>
+                <tr><td>Node</td><td>{{environment.nodeVersion}}</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+
     {{else}}
       <div class="alert alert-warning">Run not found.</div>
     {{/with}}

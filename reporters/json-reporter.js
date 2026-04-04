@@ -6,6 +6,7 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 
@@ -45,6 +46,26 @@ function buildResult({ scenario, app, tag, meteorCheckoutPath, collectorResults,
     }
   }
 
+  // Collect environment info for confidence scoring
+  const environment = {
+    hostname: os.hostname(),
+    platform: `${os.type()} ${os.release()}`,
+    arch: os.arch(),
+    cpus: os.cpus().length,
+    cpuModel: os.cpus()[0]?.model || 'unknown',
+    totalMemoryMb: Math.round(os.totalmem() / 1024 / 1024),
+    nodeVersion: process.version,
+  };
+
+  // Detect if running on a dedicated server (no desktop/GUI environment)
+  try {
+    const sessionType = process.env.XDG_SESSION_TYPE || '';
+    const display = process.env.DISPLAY || '';
+    environment.dedicated = !sessionType && !display;
+  } catch {
+    environment.dedicated = false;
+  }
+
   return {
     timestamp: new Date().toISOString(),
     tag: tag || meteorVersion,
@@ -54,6 +75,7 @@ function buildResult({ scenario, app, tag, meteorCheckoutPath, collectorResults,
     },
     scenario,
     app,
+    environment,
     ...(Object.keys(config).length > 0 && { config }),
     wall_clock_ms: wallClockMs,
     metrics: Object.fromEntries(

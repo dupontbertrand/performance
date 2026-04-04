@@ -39,4 +39,14 @@ Template.detail.helpers({
   gcMinorMs() { return this.metrics?.gc?.minor?.total_ms?.toFixed(0) || '-'; },
   gcMajorCount() { return this.metrics?.gc?.major?.count || '-'; },
   gcMajorMs() { return this.metrics?.gc?.major?.total_ms?.toFixed(0) || '-'; },
+  hasEnvironment() { return !!this.environment; },
+  envRamGb() { return this.environment?.totalMemoryMb ? (this.environment.totalMemoryMb / 1024).toFixed(0) : '-'; },
+  confidenceBadge() {
+    const env = this.environment;
+    if (!env) return '';
+    if (env.dedicated) {
+      return '<span class="badge bg-success ms-2">Dedicated server</span>';
+    }
+    return '<span class="badge bg-warning text-dark ms-2">Desktop</span>';
+  },
 });

@@ -14,6 +14,7 @@
               <th>CPU avg</th>
               <th>RAM avg</th>
               <th>GC pause</th>
+              <th>Confidence</th>
               <th>Status</th>
               <th></th>
             </tr>
@@ -28,6 +29,7 @@
                 <td>{{cpuAvg}}%</td>
                 <td>{{ramAvg}} MB</td>
                 <td>{{gcPause}} ms</td>
+                <td>{{{confidenceBadge}}}</td>
                 <td>{{{statusBadge}}}</td>
                 <td><a href="/run/{{_id}}" class="btn btn-sm btn-outline-secondary">Detail</a></td>
               </tr>
