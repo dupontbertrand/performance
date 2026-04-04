@@ -7,23 +7,49 @@ import './admin.html';
 Template.admin.onCreated(function () {
   this.subscribe('jobs.all');
   this.branch = new ReactiveVar('devel');
+  this.branches = new ReactiveVar(['devel', 'release-3.5', 'release-3.4']);
   this.selectedScenarios = new ReactiveVar(
     [...(Meteor.settings?.public?.scenarios || [])],
   );
   this.error = new ReactiveVar('');
   this.success = new ReactiveVar('');
   this.launching = new ReactiveVar(false);
+  this.agentStatus = new ReactiveVar(null);
+
+  // Fetch branches from server
+  Meteor.call('jobs.getBranches', (err, result) => {
+    if (!err && result?.length) {
+      this.branches.set(result);
+    }
+  });
+
+  // Poll agent status every 15s
+  const pollAgent = () => {
+    Meteor.call('jobs.getAgentStatus', (err, result) => {
+      if (!err) this.agentStatus.set(result);
+    });
+  };
+  pollAgent();
+  this.agentInterval = setInterval(pollAgent, 15000);
+});
+
+Template.admin.onDestroyed(function () {
+  if (this.agentInterval) clearInterval(this.agentInterval);
+});
+
+Template.admin.onRendered(function () {
+  this.$('.js-scenario-check').prop('checked', true);
 });
 
 Template.admin.helpers({
   branch() {
     return Template.instance().branch.get();
   },
+  branches() {
+    return Template.instance().branches.get();
+  },
   scenarios() {
     return Meteor.settings?.public?.scenarios || [];
-  },
-  isSelected(scenario) {
-    return Template.instance().selectedScenarios.get().includes(scenario);
   },
   error() {
     return Template.instance().error.get();
@@ -35,10 +61,10 @@ Template.admin.helpers({
     return Template.instance().launching.get();
   },
   jobs() {
-    return Jobs.find({}, { sort: { createdAt: -1 } });
+    return Jobs.find({ _id: { $nin: ['__branches__', '__agent__'] } }, { sort: { createdAt: -1 } });
   },
   hasJobs() {
-    return Jobs.find().count() > 0;
+    return Jobs.find({ _id: { $nin: ['__branches__', '__agent__'] } }).count() > 0;
   },
   joinScenarios(scenarios) {
     if (!scenarios) return '-';
@@ -52,6 +78,37 @@ Template.admin.helpers({
       failed: '<span class="badge bg-danger">Failed</span>',
     };
     return badges[status] || `<span class="badge bg-secondary">${status}</span>`;
+  },
+  progressCell(job) {
+    if (job.status === 'pending') return '-';
+    if (job.status === 'done') return `${job.scenarios.length}/${job.scenarios.length}`;
+    if (job.status === 'failed') {
+      const current = job.progress?.current || 0;
+      return `${current}/${job.scenarios.length} (failed)`;
+    }
+    // running
+    const p = job.progress;
+    if (!p) return '...';
+    const scenario = p.currentScenario || '...';
+    return `${p.current}/${p.total} <span class="text-info">${scenario}</span>`;
+  },
+  runLinks(runIds) {
+    if (!runIds?.length) return '';
+    return runIds.map((id) => `<a href="/run/${id}" class="badge bg-outline-secondary text-decoration-none me-1">${id.slice(0, 6)}</a>`).join('');
+  },
+  agentStatusHtml() {
+    const agent = Template.instance().agentStatus.get();
+    if (!agent?.lastSeen) {
+      return '<span class="text-muted">No agent connected</span>';
+    }
+    const ago = Math.round((Date.now() - new Date(agent.lastSeen).getTime()) / 1000);
+    if (ago < 60) {
+      return `<span class="badge bg-success">Online</span> <span class="text-muted">last seen ${ago}s ago</span>`;
+    }
+    if (ago < 300) {
+      return `<span class="badge bg-warning text-dark">Idle</span> <span class="text-muted">last seen ${Math.round(ago / 60)}min ago</span>`;
+    }
+    return `<span class="badge bg-danger">Offline</span> <span class="text-muted">last seen ${Math.round(ago / 60)}min ago</span>`;
   },
   formatDate(date) {
     if (!date) return '-';
@@ -69,7 +126,7 @@ Template.admin.helpers({
 });
 
 Template.admin.events({
-  'input .js-branch'(event, instance) {
+  'change .js-branch'(event, instance) {
     instance.branch.set(event.target.value);
   },
   'change .js-scenario-check'(event, instance) {

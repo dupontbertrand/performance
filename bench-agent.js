@@ -91,7 +91,14 @@ async function executeJob(ddp, job) {
   try {
     checkoutBranch(job.branch);
 
-    for (const scenario of job.scenarios) {
+    for (let i = 0; i < job.scenarios.length; i++) {
+      const scenario = job.scenarios[i];
+
+      // Report progress
+      try {
+        await ddp.call('jobs.updateProgress', API_KEY, job._id, i, scenario);
+      } catch { /* non-critical */ }
+
       const resultPath = runBenchmark(scenario, job.branch);
       log(`Result: ${resultPath}`);
 
@@ -114,6 +121,32 @@ async function executeJob(ddp, job) {
   }
 }
 
+function fetchBranches() {
+  try {
+    const raw = execSync('git branch -r --sort=-committerdate', {
+      cwd: METEOR_CHECKOUT, encoding: 'utf8',
+    });
+    return raw.split('\n')
+      .map((b) => b.trim().replace('origin/', ''))
+      .filter((b) => b && !b.includes('HEAD') && !b.includes(' -> '));
+  } catch {
+    return [];
+  }
+}
+
+async function syncBranches(ddp) {
+  try {
+    execSync('git fetch origin --prune', { cwd: METEOR_CHECKOUT, stdio: 'pipe' });
+    const branches = fetchBranches();
+    if (branches.length > 0) {
+      await ddp.call('jobs.updateBranches', API_KEY, branches);
+      log(`Synced ${branches.length} branches to dashboard`);
+    }
+  } catch (err) {
+    log(`Branch sync error: ${err.message}`);
+  }
+}
+
 async function main() {
   log('Bench agent starting...');
   log(`Dashboard: ${DASHBOARD_URL}`);
@@ -126,8 +159,15 @@ async function main() {
     log('Disconnected from dashboard, will reconnect...');
   });
 
+  // Sync branches on startup
+  await syncBranches(ddp);
+
+  let pollCount = 0;
   while (true) {
     try {
+      // Heartbeat
+      await ddp.call('jobs.heartbeat', API_KEY);
+
       // Claim next pending job
       const job = await ddp.call('jobs.claimNext', API_KEY);
 
@@ -138,6 +178,12 @@ async function main() {
       }
     } catch (err) {
       log(`Poll error: ${err.message}`);
+    }
+
+    // Re-sync branches every ~10 minutes (20 polls × 30s)
+    pollCount++;
+    if (pollCount % 20 === 0) {
+      await syncBranches(ddp);
     }
 
     await sleep(POLL_INTERVAL);

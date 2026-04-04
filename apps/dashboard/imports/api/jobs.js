@@ -29,7 +29,10 @@ if (Meteor.isServer) {
 
   Meteor.publish('jobs.all', function () {
     if (!this.userId) return this.ready();
-    return Jobs.find({}, { sort: { createdAt: -1 }, limit: 100 });
+    return Jobs.find(
+      { _id: { $nin: ['__branches__'] } },
+      { sort: { createdAt: -1 }, limit: 100 },
+    );
   });
 
   Meteor.methods({
@@ -62,6 +65,7 @@ if (Meteor.isServer) {
         completedAt: null,
         error: null,
         runIds: [],
+        progress: { current: 0, total: scenarios.length, currentScenario: null },
         createdBy: this.userId,
       });
     },
@@ -87,6 +91,36 @@ if (Meteor.isServer) {
       return result || null;
     },
 
+    async 'jobs.updateProgress'(apiKey, jobId, current, currentScenario) {
+      check(apiKey, String);
+      check(jobId, String);
+      check(current, Number);
+      check(currentScenario, String);
+      validateApiKey(apiKey);
+
+      await Jobs.updateAsync(jobId, {
+        $set: {
+          'progress.current': current,
+          'progress.currentScenario': currentScenario,
+        },
+      });
+    },
+
+    async 'jobs.heartbeat'(apiKey) {
+      check(apiKey, String);
+      validateApiKey(apiKey);
+
+      await Jobs.upsertAsync(
+        { _id: '__agent__' },
+        { $set: { _id: '__agent__', lastSeen: new Date(), status: 'online' } },
+      );
+    },
+
+    async 'jobs.getAgentStatus'() {
+      const doc = await Jobs.findOneAsync('__agent__');
+      return doc || null;
+    },
+
     async 'jobs.markDone'(apiKey, jobId, runIds) {
       check(apiKey, String);
       check(jobId, String);
@@ -107,6 +141,24 @@ if (Meteor.isServer) {
       await Jobs.updateAsync(jobId, {
         $set: { status: 'failed', completedAt: new Date(), error: errorMsg },
       });
+    },
+
+    async 'jobs.updateBranches'(apiKey, branches) {
+      check(apiKey, String);
+      check(branches, [String]);
+      validateApiKey(apiKey);
+
+      // Store branches in a simple config collection-like pattern
+      // Use Jobs collection with a special _id
+      await Jobs.upsertAsync(
+        { _id: '__branches__' },
+        { $set: { _id: '__branches__', branches, updatedAt: new Date() } },
+      );
+    },
+
+    async 'jobs.getBranches'() {
+      const doc = await Jobs.findOneAsync('__branches__');
+      return doc?.branches || ['devel', 'release-3.5', 'release-3.4'];
     },
 
     async 'jobs.cancel'(jobId) {

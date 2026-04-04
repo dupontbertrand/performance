@@ -8,14 +8,11 @@
         <div class="card-body">
           <div class="mb-3">
             <label for="branch" class="form-label">Meteor branch</label>
-            <input type="text" class="form-control js-branch" id="branch"
-                   placeholder="devel" list="branch-suggestions" value="{{branch}}">
-            <datalist id="branch-suggestions">
-              <option value="devel">
-              <option value="release-3.5">
-              <option value="release-3.4">
-              <option value="release-3.4.1">
-            </datalist>
+            <select class="form-select js-branch" id="branch">
+              {{#each branches}}
+                <option value="{{this}}">{{this}}</option>
+              {{/each}}
+            </select>
           </div>
 
           <div class="mb-3">
@@ -27,7 +24,7 @@
             {{#each scenarios}}
               <div class="form-check">
                 <input class="form-check-input js-scenario-check" type="checkbox"
-                       value="{{this}}" id="scenario-{{this}}" checked="{{isSelected this}}">
+                       value="{{this}}" id="scenario-{{this}}">
                 <label class="form-check-label" for="scenario-{{this}}">{{this}}</label>
               </div>
             {{/each}}
@@ -40,9 +37,18 @@
             <div class="alert alert-success py-2">{{success}}</div>
           {{/if}}
 
-          <button class="btn btn-primary js-launch" {{#if launching}}disabled{{/if}}>
+          <button class="btn btn-primary js-launch" disabled="{{launching}}">
             {{#if launching}}Launching...{{else}}Launch{{/if}}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card">
+        <div class="card-header">Agent Status</div>
+        <div class="card-body">
+          {{{agentStatusHtml}}}
         </div>
       </div>
     </div>
@@ -59,8 +65,8 @@
               <th>Branch</th>
               <th>Scenarios</th>
               <th>Status</th>
+              <th>Progress</th>
               <th>Created</th>
-              <th>Started</th>
               <th>Completed</th>
               <th></th>
             </tr>
@@ -71,12 +77,15 @@
                 <td><code>{{branch}}</code></td>
                 <td>{{joinScenarios scenarios}}</td>
                 <td>{{{statusBadge status}}}</td>
+                <td>{{{progressCell this}}}</td>
                 <td>{{formatDate createdAt}}</td>
-                <td>{{formatDate startedAt}}</td>
                 <td>{{formatDate completedAt}}</td>
                 <td>
                   {{#if isEq status "pending"}}
                     <button class="btn btn-sm btn-outline-danger js-cancel" data-id="{{_id}}">Cancel</button>
+                  {{/if}}
+                  {{#if isEq status "done"}}
+                    {{{runLinks runIds}}}
                   {{/if}}
                   {{#if error}}
                     <span class="text-danger" title="{{error}}">{{truncate error 40}}</span>
