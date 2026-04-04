@@ -119,6 +119,12 @@ Template.admin.helpers({
   isEq(a, b) {
     return a === b;
   },
+  isCancellable(status) {
+    return status === 'pending' || status === 'running';
+  },
+  isRerunnable(status) {
+    return status === 'done' || status === 'failed';
+  },
   truncate(str, len) {
     if (!str) return '';
     return str.length > len ? `${str.slice(0, len)}...` : str;
@@ -182,5 +188,10 @@ Template.admin.events({
     event.preventDefault();
     const jobId = event.currentTarget.dataset.id;
     Meteor.call('jobs.cancel', jobId);
+  },
+  'click .js-rerun'(event) {
+    event.preventDefault();
+    const jobId = event.currentTarget.dataset.id;
+    Meteor.call('jobs.rerun', jobId);
   },
 });

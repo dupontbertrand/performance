@@ -91,6 +91,15 @@ if (Meteor.isServer) {
       return result || null;
     },
 
+    async 'jobs.getStatus'(apiKey, jobId) {
+      check(apiKey, String);
+      check(jobId, String);
+      validateApiKey(apiKey);
+
+      const job = await Jobs.findOneAsync(jobId, { fields: { status: 1 } });
+      return job?.status || null;
+    },
+
     async 'jobs.updateProgress'(apiKey, jobId, current, currentScenario) {
       check(apiKey, String);
       check(jobId, String);
@@ -169,12 +178,38 @@ if (Meteor.isServer) {
 
       const job = await Jobs.findOneAsync(jobId);
       if (!job) throw new Meteor.Error('not-found', 'Job not found');
-      if (job.status !== 'pending') {
-        throw new Meteor.Error('invalid-status', 'Can only cancel pending jobs');
+      if (job.status !== 'pending' && job.status !== 'running') {
+        throw new Meteor.Error('invalid-status', 'Can only cancel pending or running jobs');
       }
 
       await Jobs.updateAsync(jobId, {
         $set: { status: 'failed', completedAt: new Date(), error: 'Cancelled by admin' },
+      });
+    },
+
+    async 'jobs.rerun'(jobId) {
+      if (!this.userId) {
+        throw new Meteor.Error('unauthorized', 'Must be logged in');
+      }
+      check(jobId, String);
+
+      const job = await Jobs.findOneAsync(jobId);
+      if (!job) throw new Meteor.Error('not-found', 'Job not found');
+      if (job.status !== 'done' && job.status !== 'failed') {
+        throw new Meteor.Error('invalid-status', 'Can only re-run completed or failed jobs');
+      }
+
+      return await Jobs.insertAsync({
+        branch: job.branch,
+        scenarios: job.scenarios,
+        status: 'pending',
+        createdAt: new Date(),
+        startedAt: null,
+        completedAt: null,
+        error: null,
+        runIds: [],
+        progress: { current: 0, total: job.scenarios.length, currentScenario: null },
+        createdBy: this.userId,
       });
     },
   });

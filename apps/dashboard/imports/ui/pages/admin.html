@@ -81,8 +81,11 @@
                 <td>{{formatDate createdAt}}</td>
                 <td>{{formatDate completedAt}}</td>
                 <td>
-                  {{#if isEq status "pending"}}
+                  {{#if isCancellable status}}
                     <button class="btn btn-sm btn-outline-danger js-cancel" data-id="{{_id}}">Cancel</button>
+                  {{/if}}
+                  {{#if isRerunnable status}}
+                    <button class="btn btn-sm btn-outline-primary js-rerun" data-id="{{_id}}">Re-run</button>
                   {{/if}}
                   {{#if isEq status "done"}}
                     {{{runLinks runIds}}}
